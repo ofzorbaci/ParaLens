@@ -11,7 +11,8 @@ import { parseSpreadsheet, templateWorkbook, type ImportRow } from '@/lib/spread
 import { pickSpreadsheet, shareWorkbook } from '@/lib/spreadsheet-file';
 import { KIND_LABELS } from '@/lib/types';
 import { plausibilityWarnings } from '@/lib/validate';
-import { addHoldings, newId, useStore } from '@/state/store';
+import { newId } from '@/lib/ids';
+import { addHoldings, useStore } from '@/state/store';
 
 /** Bulk import from Excel/CSV with a preview: nothing is written until the user confirms. */
 export default function ImportScreen() {

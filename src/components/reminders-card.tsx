@@ -3,11 +3,11 @@ import { Platform, StyleSheet, Switch, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { openPaywall, usePremium } from '@/components/premium-gate';
-import { Card } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { nextCpiReleases, nextRateDecisions } from '@/lib/calendar';
-import type { ReminderKind } from '@/lib/notify';
+import { sendTestNotification, type ReminderKind } from '@/lib/notify';
 import { setMaturityReminders, setReminders, useStore } from '@/state/store';
 
 export const ANNOUNCEMENT_FMT = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
@@ -81,10 +81,24 @@ export function RemindersCard() {
           trackColor={{ true: theme.accent, false: theme.border }}
         />
       </View>
-      {Platform.OS === 'web' && (
+      {Platform.OS === 'web' ? (
         <ThemedText type="small" themeColor="textSecondary">
           Bildirimler yalnızca telefonda çalışır.
         </ThemedText>
+      ) : (
+        <Button
+          title="Bildirimleri dene"
+          kind="secondary"
+          compact
+          onPress={async () => {
+            const ok = await sendTestNotification();
+            setStatus(
+              ok
+                ? 'Deneme bildirimi 5 saniye içinde gelecek. Görmek için uygulamayı arka plana alabilirsin.'
+                : 'Bildirim izni verilmedi. Telefon ayarlarından izin verebilirsin.',
+            );
+          }}
+        />
       )}
       {status && (
         <ThemedText type="small" themeColor="textSecondary">

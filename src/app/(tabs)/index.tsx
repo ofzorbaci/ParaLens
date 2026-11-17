@@ -1,3 +1,4 @@
+import { CrashReportCard } from '@/components/crash-report-card';
 import { Link, router } from 'expo-router';
 import { useEffect } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
@@ -26,7 +27,8 @@ import type { CpiIndex } from '@/lib/cpi';
 import { analyzeHolding, analyzePortfolio } from '@/lib/returns';
 import { KIND_LABELS, type Holding, type LivePrices, type Settings } from '@/lib/types';
 import { useBudget } from '@/state/budget';
-import { maybeAskForReview, removeSamples, selectPortfolio, setReminders, updateSettings, useStore } from '@/state/store';
+import { selectPortfolio } from '@/state/portfolios';
+import { maybeAskForReview, removeSamples, setReminders, updateSettings, useStore } from '@/state/store';
 
 const RELEASE_FMT = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long' });
 
@@ -112,6 +114,8 @@ Faiz kararı: ${RELEASE_FMT.format(nextRate)}, 14:00.` : ''),
           </View>
         }
       />
+
+      <CrashReportCard />
 
       {restored && (
         <InfoBanner title="Verilerin geri yüklendi" body="Uygulama verilerine ulaşamadı ve otomatik yedekten geri yükledi." />

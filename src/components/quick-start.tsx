@@ -12,7 +12,8 @@ import { analyzeHolding } from '@/lib/returns';
 import { QUICK_PERIODS, quickStartDate, samplePortfolio } from '@/lib/samples';
 import type { Holding } from '@/lib/types';
 import { scheduleBudgetNudge } from '@/lib/notify';
-import { addHoldings, newId, saveHolding, updateSettings, useStore } from '@/state/store';
+import { newId } from '@/lib/ids';
+import { addHoldings, saveHolding, updateSettings, useStore } from '@/state/store';
 
 /**
  * The first screen a new user sees: one deposit in three fields and the answer right away,

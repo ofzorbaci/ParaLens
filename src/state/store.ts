@@ -1,19 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
 
 import snapshot from '@/data/feed-snapshot.json';
-import { rateDecisionDates } from '@/lib/calendar';
 import { buildCpiIndex, type CpiIndex } from '@/lib/cpi';
 import { parseTcmbCpiHtml, TCMB_CPI_URL, type CpiRow } from '@/lib/cpi-parse';
-import { payout, setHolidays } from '@/lib/business-day';
-import { setWithholdingRules } from '@/lib/deposit';
-import { setFundBook, setSecurityPrices } from '@/lib/securities';
+import { payout } from '@/lib/business-day';
+import { setFundBook } from '@/lib/securities';
 import { loadFundBook, readCachedFundBook, clearFundCache, type CachedFundBook } from '@/lib/fund-service';
 import { checkAlerts, goalTarget, type AlertState } from '@/lib/alerts';
 import { NO_PREMIUM, type PremiumStatus } from '@/lib/entitlements';
 import { fetchFeed, isFeed, newerFeed } from '@/lib/feed';
+import { FEED_URL } from '@/lib/feed-url';
 import type { Feed } from '@/lib/feed-types';
 import {
   cancelMaturityReminders,
@@ -26,6 +24,7 @@ import {
   type ReminderKind,
 } from '@/lib/notify';
 import { nextMaturity } from '@/lib/renew';
+import { feedPatch, type FeedOrigin } from '@/state/feed-patch';
 import { deleteSnapshot, readSnapshot, writeSnapshot } from '@/lib/auto-backup';
 import { formatLongDate, setAmountsMasked, todayISO } from '@/lib/format';
 import { shouldAskForReview } from '@/lib/review';
@@ -33,7 +32,7 @@ import { requestReview } from '@/lib/store-review';
 import { refreshPriceBook, toLivePrices, type PriceBook } from '@/lib/prices';
 import { buy, initPurchases, restore, type Plan } from '@/lib/purchases';
 import { analyzeHolding, analyzePortfolio } from '@/lib/returns';
-import type { Holding, LivePrices, Portfolio, Settings } from '@/lib/types';
+import type { Holding, LivePrices, Settings } from '@/lib/types';
 
 type State = {
   ready: boolean;
@@ -58,7 +57,7 @@ type State = {
   /** official data: CPI, policy rate, PPK calendar, expectations, withholding */
   feed: Feed;
   /** 'bundled' until a downloaded feed replaces it */
-  feedOrigin: 'bundled' | 'cached' | 'live';
+  feedOrigin: FeedOrigin;
   cpi: { rows: CpiRow[]; index: CpiIndex; live: boolean };
   rateSchedule: Date[];
   /** plain numbers for the calculators */
@@ -83,26 +82,7 @@ const KEYS = {
 /** `firstOpenAt` starts the 14-day free taste (lib/taste.ts). */
 type Meta = { opens: number; firstOpenAt?: string; reviewAskedAt?: string; alerts?: AlertState };
 
-/** GitHub Pages address of feed.json, set in app.json → expo.extra.feedUrl. */
-const FEED_URL = Constants.expoConfig?.extra?.feedUrl as string | undefined;
-
 const bundled = snapshot as Feed;
-
-/** Applies a feed; its CPI replaces the current series unless that one (read straight from TCMB) is newer. */
-function feedPatch(feed: Feed, origin: State['feedOrigin'], currentCpiMonth = '') {
-  setWithholdingRules(feed.withholding);
-  setSecurityPrices(feed.securities, feed.usQuotes);
-  setHolidays(feed.holidays);
-  const rows = feed.cpi.rows;
-  return {
-    feed,
-    feedOrigin: origin,
-    rateSchedule: rateDecisionDates(feed.rateDecisions.dates, feed.rateDecisions.time),
-    ...(rows.at(-1)!.month >= currentCpiMonth && {
-      cpi: { rows, index: buildCpiIndex(rows), live: origin === 'live' },
-    }),
-  };
-}
 
 const initialFeed = feedPatch(bundled, 'bundled');
 const defaultSettings: Settings = { inflationSource: 'tuik', customAnnualRate: 0, notifyCpi: false };
@@ -467,10 +447,6 @@ export async function deleteAllData(): Promise<void> {
   persist(KEYS.meta, state.meta);
 }
 
-export function newId(): string {
-  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-}
-
 /**
  * Premium alarms: compares the whole portfolio (all portfolios together) with the last check and
  * notifies only when a condition flips — real return turning negative, or the goal reached.
@@ -507,30 +483,13 @@ export function setGoal(amount: number | undefined) {
   void runAlertCheck();
 }
 
-/** Shows another portfolio on the summary; undefined is the main one. */
-export function selectPortfolio(id: string | undefined) {
-  updateSettings({ activePortfolio: id });
+/** Read access for the store's helpers in other files (src/state/portfolios.ts). */
+export function storeSnapshot(): Readonly<State> {
+  return state;
 }
 
-/** Premium: a new, empty portfolio, selected right away. */
-export function addPortfolio(name: string): Portfolio {
-  const p = { id: newId(), name: name.trim() || 'Yeni portföy' };
-  updateSettings({ portfolios: [...(state.settings.portfolios ?? []), p], activePortfolio: p.id });
-  return p;
-}
-
-export function renamePortfolio(id: string, name: string) {
-  updateSettings({ portfolios: (state.settings.portfolios ?? []).map((p) => (p.id === id ? { ...p, name: name.trim() || p.name } : p)) });
-}
-
-/** Removes a portfolio together with its holdings. */
-export function deletePortfolio(id: string) {
-  const allHoldings = state.allHoldings.filter((h) => h.portfolioId !== id);
-  const settings = {
-    ...state.settings,
-    portfolios: (state.settings.portfolios ?? []).filter((p) => p.id !== id),
-    activePortfolio: state.settings.activePortfolio === id ? undefined : state.settings.activePortfolio,
-  };
+/** Replaces every holding and the settings at once, keeping maturity reminders in step. */
+export function replaceData(allHoldings: Holding[], settings: Settings) {
   set({ allHoldings, settings });
   persist(KEYS.holdings, allHoldings);
   persist(KEYS.settings, settings);

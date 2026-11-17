@@ -40,6 +40,11 @@
             ]
           }
         ]
+      },
+      "bundleIdentifier": "app.paralens",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -48,7 +53,8 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "app.paralens"
     },
     "web": {
       "output": "server",
@@ -76,7 +82,10 @@
         {
           "faceIDPermission": "ParaLens, birikimlerini korumak için Face ID ile kilit açmayı kullanır."
         }
-      ]
+      ],
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

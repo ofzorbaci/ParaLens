@@ -2,8 +2,14 @@
 # GitHub Pages'te /funds altında yayınlanır (feed.json ve web sayfalarıyla birlikte).
 #
 # Saatler UTC; Türkiye UTC+3:
-#   05:30 UTC = 08:30 TSİ  ana çekim
-#   07:00 UTC = 10:00 TSİ  tamamlama turu (son günü ve eksik fonları yeniden çeker)
+#   04:23 UTC = 07:23 TSİ  ana çekim
+#   05:47 UTC = 08:47 TSİ  ana çekim, yedek tetik
+#   07:17 UTC = 10:17 TSİ  tamamlama turu (son günü ve eksik fonları yeniden çeker)
+#   09:41 UTC = 12:41 TSİ  son tamamlama turu: yalnızca bunda hata olursa iş kırmızı olur
+#
+# GitHub zamanlanmış işleri yoğun saatlerde (özellikle saat başı) saatlerce geciktirebiliyor; bu
+# yüzden dakikalar saat başından uzak ve birden fazla tetik var. Yeni gün yoksa çalıştırma hiçbir
+# şeyi değiştirmeden biter.
 #
 # Hata olursa iş kırmızı görünür ve GitHub sana e-posta atar; fund-data dalına ve Pages'e
 # dokunulmaz, yani eski veri yerinde kalır. fund-data dalı her seferinde tek commit olarak
@@ -16,8 +22,10 @@ name: Fon verisi
 
 on:
   schedule:
-    - cron: '30 5 * * 1-5'
-    - cron: '0 7 * * 1-5'
+    - cron: '23 4 * * 1-5'
+    - cron: '47 5 * * 1-5'
+    - cron: '17 7 * * 1-5'
+    - cron: '41 9 * * 1-5'
   workflow_dispatch:
     inputs:
       mode:
@@ -91,15 +99,15 @@ jobs:
         if: inputs.mode != 'publish'
         run: pip install -r app/data-pipeline/requirements.txt
 
-      # 08:30 ana çekimde TEFAS geçici olarak yanıt vermezse iş kırmızıya dönmez (e-posta gelmez):
-      # eski veri yerinde kalır ve 10:00 tamamlama turu aynı günü yeniden dener. 10:00'da da
+      # Sabah tetiklerinde TEFAS geçici olarak yanıt vermezse iş kırmızıya dönmez (e-posta gelmez):
+      # eski veri yerinde kalır ve sonraki tetik aynı günü yeniden dener. Son tetikte (12:41) de
       # alınamazsa iş başarısız olur ve e-posta gelir.
       - name: TEFAS senkronu
         if: inputs.mode != 'publish'
-        continue-on-error: ${{ github.event.schedule == '30 5 * * 1-5' }}
+        continue-on-error: ${{ github.event.schedule != '' && github.event.schedule != '41 9 * * 1-5' }}
         run: |
           MODE=main
-          if [[ "${{ github.event.schedule }}" == "0 7 * * 1-5" ]]; then MODE=topup; fi
+          case "${{ github.event.schedule }}" in "17 7 * * 1-5"|"41 9 * * 1-5") MODE=topup ;; esac
           if [[ -n "${{ inputs.mode }}" ]]; then MODE="${{ inputs.mode }}"; fi
           python app/data-pipeline/sync.py --out data --mode "$MODE"
 

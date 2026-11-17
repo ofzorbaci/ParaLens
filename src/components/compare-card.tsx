@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Line, Path } from 'react-native-svg';
 
+import { compareSummary } from '@/lib/chart-summary';
+
 import { ThemedText } from '@/components/themed-text';
 import { Card, Choice, Pct } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
@@ -73,7 +75,15 @@ export function CompareCard() {
       </ThemedText>
       <Choice options={COMPARE_PERIODS.map((p) => ({ value: String(p.months), label: p.label }))} value={months} onChange={setMonths} />
 
-      <View onLayout={onLayout} style={{ height: HEIGHT }}>
+      <View
+        onLayout={onLayout}
+        style={{ height: HEIGHT }}
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={compareSummary(
+          COMPARE_PERIODS.find((p) => String(p.months) === months)?.label ?? '',
+          visible.map((l) => ({ label: COMPARE_LABELS[l.key], real: l.real })),
+        )}>
         {width > 0 && count > 1 && (
           <Svg width={width} height={HEIGHT}>
             <Line x1={PAD.x} x2={width - PAD.x} y1={y(100)} y2={y(100)} stroke={theme.border} strokeDasharray="3 4" />

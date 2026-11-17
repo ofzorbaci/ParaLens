@@ -8,7 +8,7 @@ export async function enableReminders(_kind: ReminderKind, _rateSchedule: Date[]
 
 export async function disableReminders(_kind: ReminderKind): Promise<void> {}
 
-export type MaturityReminder = { id: string; name: string; date: string };
+export type MaturityReminder = { id: string; name: string; date: string; payoutNote?: string };
 
 export async function scheduleMaturityReminders(_items: MaturityReminder[]): Promise<boolean> {
   return false;
@@ -39,3 +39,7 @@ export async function scheduleBudgetReminders(_items: PaymentReminder[]): Promis
 export async function cancelBudgetReminders(): Promise<void> {}
 
 export async function scheduleBudgetNudge(): Promise<void> {}
+
+export async function sendTestNotification(): Promise<boolean> {
+  return false;
+}

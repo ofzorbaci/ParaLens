@@ -49,6 +49,16 @@ async function ensurePermission(): Promise<boolean> {
 
 export const requestNotificationPermission = ensurePermission;
 
+/** A local notification in 5 seconds, to check on the phone that reminders arrive; false without permission. */
+export async function sendTestNotification(): Promise<boolean> {
+  if (!(await ensurePermission())) return false;
+  await Notifications.scheduleNotificationAsync({
+    content: { title: 'ParaLens bildirimleri çalışıyor', body: 'Hatırlatmaların bu şekilde gelecek.', data: { tag: 'test' } },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 5 },
+  });
+  return true;
+}
+
 /** Shows a notification right away, e.g. when an alarm condition flips. */
 export async function notifyNow(title: string, body: string, url: string): Promise<void> {
   if (!(await Notifications.getPermissionsAsync()).granted) return;

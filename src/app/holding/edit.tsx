@@ -1,16 +1,20 @@
-import Constants from 'expo-constants';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { DateField } from '@/components/date-field';
+import { DepositFields } from '@/components/holding-form/deposit-fields';
+import { FormSummary } from '@/components/holding-form/form-summary';
+import { GROUPS, groupOf, numText, type Group } from '@/components/holding-form/form-types';
+import { UsAssetFields } from '@/components/holding-form/us-asset-fields';
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, Choice, Field, Icon, IconButton, Pct, Row, Screen } from '@/components/ui';
+import { Button, Card, Choice, Field, IconButton, Screen } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { defaultWithholding } from '@/lib/deposit';
-import { formatLongDate, formatMoney, formatPct, formatRate, formatTL, parseAmount, todayISO } from '@/lib/format';
+import { formatLongDate, formatTL, parseAmount, todayISO } from '@/lib/format';
+import { FEED_URL } from '@/lib/feed-url';
 import { fetchTryRate } from '@/lib/fx';
 import { priceLookup } from '@/lib/lookup';
 import { fundPriceOn, usPriceOn } from '@/lib/fund-service';
@@ -19,32 +23,8 @@ import { feedQuote, knownSymbols, usSymbol } from '@/lib/securities';
 import { analyzeHolding } from '@/lib/returns';
 import { CURRENCY_SYMBOL, GOLD_LABELS, isCurrencyKind, isUsdPriced, KIND_LABELS, type CurrencyKind, type GoldType, type Holding, type HoldingKind } from '@/lib/types';
 import { plausibilityWarnings } from '@/lib/validate';
-import { newId, saveHolding, useStore } from '@/state/store';
-
-/** GitHub Pages address of feed.json; the TEFAS month files sit next to it. */
-const FEED_URL = Constants.expoConfig?.extra?.feedUrl as string | undefined;
-
-type Group = 'deposit' | 'fx' | 'gold' | 'fund' | 'stock' | 'usStock' | 'etf' | 'crypto' | 'other';
-
-const GROUPS: { value: Group; label: string }[] = [
-  { value: 'deposit', label: 'Mevduat' },
-  { value: 'fx', label: 'Döviz' },
-  { value: 'gold', label: 'Altın' },
-  { value: 'fund', label: 'Fon' },
-  { value: 'stock', label: 'Hisse' },
-  { value: 'usStock', label: 'ABD hisse' },
-  { value: 'etf', label: 'ETF' },
-  { value: 'crypto', label: 'Kripto' },
-  { value: 'other', label: 'Diğer' },
-];
-
-function groupOf(kind: HoldingKind): Group {
-  return isCurrencyKind(kind) ? 'fx' : kind;
-}
-
-function numText(n: number | undefined): string {
-  return n === undefined ? '' : String(n).replace('.', ',');
-}
+import { newId } from '@/lib/ids';
+import { saveHolding, useStore } from '@/state/store';
 
 export default function EditHoldingScreen() {
   const theme = useTheme();
@@ -369,152 +349,56 @@ export default function EditHoldingScreen() {
 
       <Card style={styles.form}>
         {isDeposit ? (
-          <>
-            <Field
-              label="Yatırdığın tutar"
-              prefix={fxDeposit ? CURRENCY_SYMBOL[fxDeposit] : '₺'}
-              keyboardType="decimal-pad"
-              placeholder={fxDeposit ? '10.000' : '100.000'}
-              value={principal}
-              onChangeText={setPrincipal}
-              error={show(fxDeposit ? errors.quantity : errors.cost)}
-            />
-            <View style={styles.pair}>
-              <Field style={styles.flex} label="Yıllık brüt faiz" prefix="%" keyboardType="decimal-pad" placeholder={fxDeposit ? '2' : '40'} value={gross} onChangeText={setGross} error={show(errors.gross)} />
-              <Field style={styles.flex} label="Vade" suffix="gün" keyboardType="number-pad" placeholder="32" value={term} onChangeText={setTerm} error={show(errors.term)} />
-            </View>
-            <Field
-              label="Stopaj"
-              prefix="%"
-              keyboardType="decimal-pad"
-              placeholder={String(autoWithholding).replace('.', ',')}
-              value={withholding}
-              onChangeText={setWithholding}
-              error={show(errors.withholding)}
-              hint={
-                fxDeposit
-                  ? `Döviz mevduatında stopaj %${autoWithholding}; boş bırakırsan bu uygulanır.`
-                  : `Boş bırakırsan vadeye göre %${String(autoWithholding).replace('.', ',')} uygulanır.`
-              }
-            />
-            <DateField label="Başlangıç tarihi" value={buyDate} onChange={setBuyDate} max={today} />
-            {fxDeposit && (
-              <Field
-                label="Yatırdığın günkü kur"
-                prefix="₺"
-                decimals={4}
-                keyboardType="decimal-pad"
-                value={unitCost}
-                onChangeText={(t) => { setUnitCost(t); setRateNote(undefined); }}
-                error={show(errors.cost)}
-                hint={rateNote ?? 'TL karşılığını ve reel getiriyi bu kurdan hesaplarız; güncel kur otomatik alınır.'}
-              />
-            )}
-          </>
+          <DepositFields
+            fxDeposit={fxDeposit}
+            principal={principal}
+            setPrincipal={setPrincipal}
+            show={show}
+            errors={errors}
+            gross={gross}
+            setGross={setGross}
+            term={term}
+            setTerm={setTerm}
+            autoWithholding={autoWithholding}
+            withholding={withholding}
+            setWithholding={setWithholding}
+            buyDate={buyDate}
+            setBuyDate={setBuyDate}
+            today={today}
+            unitCost={unitCost}
+            setUnitCost={setUnitCost}
+            setRateNote={setRateNote}
+            rateNote={rateNote}
+          />
         ) : usdKind ? (
-          <>
-            <Field
-              label={kind === 'crypto' ? 'Kripto para sembolü' : kind === 'etf' ? 'ETF sembolü' : 'Hisse sembolü'}
-              placeholder={kind === 'crypto' ? 'ör. BTC' : kind === 'etf' ? 'ör. SPY' : 'ör. AAPL'}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              value={name}
-              onChangeText={setName}
-              error={show(errors.name)}
-            />
-            {suggestions.length > 0 && (
-              <View style={styles.chips}>
-                {suggestions.map((s) => (
-                  <Button key={s.symbol} title={`${s.symbol} · ${s.name}`} kind="secondary" compact onPress={() => setName(s.symbol)} />
-                ))}
-              </View>
-            )}
-            {tefasEtf && (
-              <View style={[styles.preview, { backgroundColor: theme.info }]}>
-                <ThemedText type="small" style={{ color: theme.infoText }}>
-                  {name.trim().toUpperCase()} bir Türk borsa yatırım fonu{tefasEtf.name ? ` (${tefasEtf.name})` : ''}. Fiyatı TEFAS’tan
-                  gelir; “Fon” türüyle ekle.
-                </ThemedText>
-                <Button
-                  title="Fon olarak ekle"
-                  kind="secondary"
-                  compact
-                  onPress={() => {
-                    const code = name.trim().toUpperCase();
-                    changeGroup('fund');
-                    setName(code);
-                  }}
-                />
-              </View>
-            )}
-            <Field
-              label={kind === 'crypto' ? 'Miktar' : 'Adet'}
-              keyboardType="decimal-pad"
-              placeholder={kind === 'crypto' ? '0,05' : '10'}
-              value={quantity}
-              onChangeText={setQuantity}
-              error={show(errors.quantity)}
-            />
-            <DateField label="Alış tarihi" value={buyDate} onChange={setBuyDate} max={today} />
-            <View style={styles.pair}>
-              <Field
-                style={styles.flex}
-                label="Birim alış fiyatı"
-                prefix="$"
-                decimals={6}
-                keyboardType="decimal-pad"
-                value={usdCost}
-                onChangeText={(t) => {
-                  setUsdCost(t);
-                  setUsdNote(undefined);
-                }}
-                error={show(errors.cost)}
-              />
-              <Field
-                style={styles.flex}
-                label="O günkü dolar kuru"
-                prefix="₺"
-                decimals={4}
-                keyboardType="decimal-pad"
-                value={usdRate}
-                onChangeText={(t) => { setUsdRate(t); setRateNote(undefined); }}
-              />
-            </View>
-            <ThemedText type="small" themeColor="textSecondary">
-              {usdNote ? `${usdNote} ` : ''}
-              {rateNote ?? 'Maliyetini TL’ye bu kurdan çeviririz; reel getiri hem TÜFE’ye hem dolara göre hesaplanır.'}
-            </ThemedText>
-            {autoQuote ? (
-              <ThemedText type="small" style={{ color: theme.accent }}>
-                Güncel fiyat otomatik: {formatMoney(autoQuote.price, '$', true)}
-                {prices.usd ? ` ≈ ${formatTL(autoQuote.price * prices.usd, true)}` : ''} ({autoQuote.source} · {closeLabel(autoQuote.date, today)})
-              </ThemedText>
-            ) : (
-              <Field
-                label="Güncel birim fiyat"
-                prefix="$"
-                decimals={6}
-                keyboardType="decimal-pad"
-                value={currentUsd}
-                onChangeText={setCurrentUsd}
-                error={show(errors.current)}
-                hint={
-                  name.trim()
-                    ? 'Bu sembolün fiyatı veri akışında yok; dolar olarak sen gir, TL’ye günlük kurla çeviririz.'
-                    : undefined
-                }
-              />
-            )}
-            {lookup && !autoQuote && (
-              <Button
-                title={`Güncel fiyata bak · ${lookup.site}`}
-                kind="secondary"
-                compact
-                icon={{ ios: 'arrow.up.right.square', android: 'open_in_new', web: 'open_in_new' }}
-                onPress={() => WebBrowser.openBrowserAsync(lookup.url)}
-              />
-            )}
-          </>
+          <UsAssetFields
+            kind={kind}
+            name={name}
+            setName={setName}
+            show={show}
+            errors={errors}
+            suggestions={suggestions}
+            tefasEtf={tefasEtf}
+            changeGroup={changeGroup}
+            quantity={quantity}
+            setQuantity={setQuantity}
+            buyDate={buyDate}
+            setBuyDate={setBuyDate}
+            today={today}
+            usdCost={usdCost}
+            setUsdCost={setUsdCost}
+            setUsdNote={setUsdNote}
+            usdRate={usdRate}
+            setUsdRate={setUsdRate}
+            setRateNote={setRateNote}
+            usdNote={usdNote}
+            rateNote={rateNote}
+            autoQuote={autoQuote}
+            prices={prices}
+            currentUsd={currentUsd}
+            setCurrentUsd={setCurrentUsd}
+            lookup={lookup}
+          />
         ) : (
           <>
             {/* Stays on screen once the code matches a priced fund, so it can still be corrected. */}
@@ -592,65 +476,22 @@ export default function EditHoldingScreen() {
         )}
       </Card>
 
-      {preview && preview.real !== undefined && (
-        <View style={[styles.preview, { backgroundColor: theme.info }]}>
-          <ThemedText type="smallBold" style={{ color: theme.infoText }}>
-            Anlık hesap
-          </ThemedText>
-          <Row
-            label={isDeposit && !fxDeposit ? 'Stopaj sonrası net getiri' : 'TL getiri'}
-            value={formatPct(preview.nominal!, false)}
-            strong
-          />
-          <Row label="Aynı dönem enflasyon" value={formatPct(preview.inflation.factor - 1, false)} strong />
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
-          <View style={styles.previewTotal}>
-            <ThemedText style={[styles.previewLabel, { color: theme.infoText }]}>Reel getirin</ThemedText>
-            <Pct ratio={preview.real} size={28} />
-          </View>
-          {isDeposit && draft.grossRate !== undefined && draft.withholding !== undefined && (
-            <ThemedText type="small" themeColor="textSecondary">
-              Yıllık net faiz {formatRate(draft.grossRate * (1 - draft.withholding / 100))}
-            </ThemedText>
-          )}
-        </View>
-      )}
-
-      <View style={styles.lock}>
-        <Icon name={{ ios: 'lock', android: 'lock', web: 'lock' }} size={16} color={theme.textSecondary} />
-        <ThemedText type="small" themeColor="textSecondary">
-          Verilerin yalnızca telefonunda saklanır
-        </ThemedText>
-      </View>
-      {warnings.length > 0 && !needsConfirm && (
-        <View style={[styles.warn, { backgroundColor: theme.negativeSoft, borderColor: theme.negativeBorder }]}>
-          <ThemedText type="smallBold" style={{ color: theme.negative }}>
-            Emin misin?
-          </ThemedText>
-          {warnings.map((w) => (
-            <ThemedText key={w.field} type="small" style={{ color: theme.negative }}>
-              • {w.message}
-            </ThemedText>
-          ))}
-        </View>
-      )}
+      <FormSummary
+        preview={preview}
+        tlDeposit={isDeposit && !fxDeposit}
+        netRate={isDeposit && draft.grossRate !== undefined && draft.withholding !== undefined ? draft.grossRate * (1 - draft.withholding / 100) : undefined}
+        warnings={warnings}
+        showWarnings={!needsConfirm}
+      />
       <Button title={warnings.length > 0 && !needsConfirm ? 'Yine de kaydet' : 'Kaydet'} onPress={onSave} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   title: { fontSize: 26, lineHeight: 32, fontWeight: 800 },
   section: { gap: Spacing.two },
   form: { gap: Spacing.three },
-  pair: { flexDirection: 'row', gap: 12 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  preview: { borderRadius: 20, padding: 20, gap: Spacing.two },
-  divider: { height: 1, marginVertical: Spacing.one },
-  previewTotal: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  previewLabel: { fontSize: 18, fontWeight: 700 },
-  warn: { borderWidth: 1, borderRadius: 16, padding: Spacing.three, gap: 4 },
-  lock: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
 });

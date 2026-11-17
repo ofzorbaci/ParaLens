@@ -6,8 +6,13 @@ name: Veri akışı
 
 on:
   schedule:
-    - cron: '15 7 * * *'
-    - cron: '15 11 * * *'
+    # GitHub zamanlanmış işleri saatlerce geciktirebiliyor; saat başından uzak, birden fazla tetik.
+    # TÜFE 10:00 TSİ (07:00 UTC), faiz kararı 14:00 TSİ (11:00 UTC) açıklanır.
+    - cron: '9 7 * * *'
+    - cron: '37 7 * * *'
+    - cron: '13 11 * * *'
+    - cron: '43 11 * * *'
+    - cron: '29 15 * * *'
   workflow_dispatch:
   push:
     branches: [main]

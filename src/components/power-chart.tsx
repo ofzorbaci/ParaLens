@@ -7,6 +7,7 @@ import { Spacing } from '@/constants/theme';
 import { useMasked } from '@/hooks/use-masked';
 import { useTheme } from '@/hooks/use-theme';
 import { formatMonth, formatTL } from '@/lib/format';
+import { powerSummary } from '@/lib/chart-summary';
 import type { PowerPoint } from '@/lib/series';
 
 const HEIGHT = 220;
@@ -39,7 +40,7 @@ export function PowerChart({ points }: { points: PowerPoint[] }) {
 
   return (
     <View>
-      <View onLayout={onLayout} style={{ height: HEIGHT }}>
+      <View onLayout={onLayout} style={{ height: HEIGHT }} accessible accessibilityRole="image" accessibilityLabel={powerSummary(points)}>
         {width > 0 && (
           <Svg width={width} height={HEIGHT}>
             <Line

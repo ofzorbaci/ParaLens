@@ -5,7 +5,8 @@ import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Field } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import type { Portfolio } from '@/lib/types';
-import { addPortfolio, deletePortfolio, renamePortfolio, selectPortfolio, useStore } from '@/state/store';
+import { addPortfolio, deletePortfolio, renamePortfolio, selectPortfolio } from '@/state/portfolios';
+import { useStore } from '@/state/store';
 
 export const MAIN_PORTFOLIO = 'Ana portföy';
 export const NO_PORTFOLIOS: Portfolio[] = [];
