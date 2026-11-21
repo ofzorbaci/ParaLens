@@ -25,7 +25,7 @@ export type PremiumFeature =
 
 export const PREMIUM_FEATURES: { id: PremiumFeature; title: string; detail: string }[] = [
   { id: 'renewUnlimited', title: 'Tam “Yenilesem mi?”', detail: 'Lira farkı, son 3 ve 12 ay; ücretsizde yalnızca sıralama' },
-  { id: 'renewForward', title: 'Vade günü 12 aylık reel lira', detail: 'Bu faizle yenilersen 12 ayda bugünün lirasıyla ne kazanırsın' },
+  { id: 'renewForward', title: 'Vade günü banka karşılaştırması', detail: 'Bankaların tekliflerini yan yana koy: 12 ayda bugünün lirasıyla hangisi kaç lira kazandırır' },
   { id: 'usdReal', title: 'Dolar bazında reel getiri', detail: 'Varlıkların ABD enflasyonuna göre gerçek değeri' },
   { id: 'enagDetail', title: 'ENAG ve kendi enflasyonun', detail: 'Her varlık için ayrı ayrı' },
   { id: 'personalBasket', title: 'Kişisel enflasyon sepeti', detail: 'Kira, gıda, ulaşım… kendi ağırlıklarınla' },
@@ -41,6 +41,19 @@ export const PREMIUM_FEATURES: { id: PremiumFeature; title: string; detail: stri
   { id: 'budgetAnalysis', title: 'Bütçe analizleri', detail: 'Geçmiş dönemler, günlük harcama haritası, hesap bazında harcama' },
   { id: 'budgetReminders', title: 'Ödeme günü hatırlatması', detail: 'Fatura ve üyeliklerin vadesinde bildirim' },
 ];
+
+/**
+ * Narrowed for launch ("Ürün merceği"): these stay in the code but are hidden from screens and
+ * the paywall, so the offer reads as one clear lens. Data the user already has is never hidden.
+ */
+export const LAUNCH_HIDDEN: readonly PremiumFeature[] = ['scenario', 'goals', 'portfolios', 'budgetAnalysis'];
+
+export function isLaunched(feature: PremiumFeature): boolean {
+  return !LAUNCH_HIDDEN.includes(feature);
+}
+
+/** What the paywall lists: everything Premium sells at launch. */
+export const OFFERED_FEATURES = PREMIUM_FEATURES.filter((f) => isLaunched(f.id));
 
 export function canUse(_feature: PremiumFeature, premium: boolean): boolean {
   return premium;

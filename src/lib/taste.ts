@@ -14,6 +14,19 @@ export function tasteDaysLeft(firstOpenAt: string | undefined, now: Date): numbe
   return Math.max(0, Math.ceil((end - now.getTime()) / 86_400_000));
 }
 
+/**
+ * Shown free for the first month: dollar and gold holders see their real return in dollars,
+ * the one answer that group asks for ("is my dollar melting in dollars too?").
+ */
+export const FIRST_MONTH_DAYS = 30;
+export const FIRST_MONTH_FEATURES: PremiumFeature[] = ['usdReal'];
+
+export function inFirstMonth(firstOpenAt: string | undefined, now: Date): boolean {
+  if (!firstOpenAt) return false;
+  return now.getTime() < Date.parse(firstOpenAt) + FIRST_MONTH_DAYS * 86_400_000;
+}
+
 export function tasteUnlocks(feature: PremiumFeature, firstOpenAt: string | undefined, now: Date): boolean {
+  if (FIRST_MONTH_FEATURES.includes(feature)) return inFirstMonth(firstOpenAt, now);
   return TASTE_FEATURES.includes(feature) && tasteDaysLeft(firstOpenAt, now) > 0;
 }

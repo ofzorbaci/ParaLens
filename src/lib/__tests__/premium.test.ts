@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { basketRate, defaultBasket } from '../basket';
-import { canAddHolding, NO_PREMIUM, premiumShowcase, yearlySavings } from '../entitlements';
+import { canAddHolding, isLaunched, NO_PREMIUM, OFFERED_FEATURES, premiumShowcase, yearlySavings } from '../entitlements';
+import { tasteUnlocks } from '../taste';
 import { shouldAskForReview } from '../review';
 import { freeTrialDays, planPeriod, statusFromCustomerInfo } from '../subscription-map';
 
@@ -172,7 +173,7 @@ describe('lifetime plan', () => {
 
 describe('free taste', () => {
   it('opens the personal-inflation features for the first 14 days only', async () => {
-    const { tasteDaysLeft, tasteUnlocks } = await import('../taste');
+    const { tasteDaysLeft } = await import('../taste');
     const first = '2026-11-01T10:00:00Z';
     expect(tasteDaysLeft(first, new Date('2026-11-01T10:00:00Z'))).toBe(14);
     expect(tasteDaysLeft(first, new Date('2026-11-14T11:00:00Z'))).toBe(1);
@@ -182,5 +183,26 @@ describe('free taste', () => {
     expect(tasteUnlocks('netWorth', first, new Date('2026-11-05'))).toBe(true);
     // Everything else stays Premium during the taste.
     expect(tasteUnlocks('benchmarks', first, new Date('2026-11-05'))).toBe(false);
+  });
+});
+
+describe('launch scope', () => {
+  it('hides scenario, goals, portfolios and budget analyses from the paywall', () => {
+    const offered = OFFERED_FEATURES.map((f) => f.id);
+    for (const id of ['scenario', 'goals', 'portfolios', 'budgetAnalysis'] as const) {
+      expect(isLaunched(id)).toBe(false);
+      expect(offered).not.toContain(id);
+    }
+    expect(offered).toContain('renewForward');
+    expect(offered).toContain('personalInflation');
+  });
+});
+
+describe('dollar-based real return in the first month', () => {
+  const opened = '2026-11-01T09:00:00.000Z';
+  it('is free for the first 30 days, then Premium', () => {
+    expect(tasteUnlocks('usdReal', opened, new Date('2026-11-29T09:00:00Z'))).toBe(true);
+    expect(tasteUnlocks('usdReal', opened, new Date('2026-12-02T09:00:00Z'))).toBe(false);
+    expect(tasteUnlocks('usdReal', undefined, new Date('2026-11-02T09:00:00Z'))).toBe(false);
   });
 });

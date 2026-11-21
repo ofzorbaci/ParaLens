@@ -54,16 +54,35 @@ describe('import', () => {
     ]);
   });
 
-  it('understands a stock tracker export without a type column and skips sells', () => {
+  it('understands a stock tracker export without a type column and subtracts sells', () => {
     const rows = [
       ['Sembol', 'İşlem Tipi', 'Adet', 'Alış Fiyatı', 'Tarih'],
       ['ASELS', 'Alış', 50, 60.25, '15.03.2026'],
       ['ASELS', 'Satış', 10, 70, '01.06.2026'],
     ];
     const r = rowsToHoldings(rows, today, id);
-    expect(r[0].holding).toMatchObject({ kind: 'stock', name: 'ASELS', quantity: 50, unitCost: 60.25, buyDate: '2026-03-15' });
+    expect(r[0].holding).toMatchObject({ kind: 'stock', name: 'ASELS', quantity: 40, unitCost: 60.25, buyDate: '2026-03-15' });
     expect(r[1].holding).toBeUndefined();
-    expect(r[1].errors[0]).toMatch(/Satış/);
+    expect(r[1].errors).toEqual([]);
+    expect(r[1].note).toMatch(/düşüldü/);
+  });
+
+  it('turns a broker trade history into what is held today (FIFO, totals, dividends)', () => {
+    const rows = [
+      ['İşlem Tarihi', 'Menkul Kıymet', 'İşlem Türü', 'Gerçekleşen Adet', 'İşlem Tutarı'],
+      ['02.01.2026 10:15:00', 'thyao', 'Alış', 100, 30000],
+      ['10.02.2026 11:00:00', 'THYAO', 'Alış', 50, 16000],
+      ['01.04.2026 14:30:00', 'THYAO', 'Satış', 120, 40000],
+      ['15.05.2026 09:00:00', 'THYAO', 'Temettü', 30, 300],
+      ['20.05.2026 09:00:00', 'EREGL', 'Satış', 5, 200],
+    ];
+    const r = rowsToHoldings(rows, today, id);
+    expect(r[0].holding).toBeUndefined();
+    expect(r[0].note).toMatch(/Tamamı satılmış/);
+    expect(r[1].holding).toMatchObject({ name: 'THYAO', quantity: 30, unitCost: 320, buyDate: '2026-02-10' });
+    expect(r[2].note).toMatch(/120 adet satış/);
+    expect(r[3].note).toMatch(/Temettü/);
+    expect(r[4].errors[0]).toMatch(/EREGL satışı dosyadaki alışlardan 5 adet fazla/);
   });
 
   it('reads semicolon CSV with decimal commas', () => {

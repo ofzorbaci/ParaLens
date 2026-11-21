@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -56,76 +57,88 @@ export function QuickStart() {
     holding && enagRate ? analyzeHolding(holding, today, prices, { ...settings, inflationSource: 'custom', customAnnualRate: enagRate }, index) : undefined;
 
   return (
-    <Card>
-      <ThemedText style={styles.title}>Senin enflasyonun kaç?</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        Önce paranı ölçelim: mevduatını gir, TÜFE’ye ve ENAG’a karşı gerçekte ne kazandığını 30 saniyede gör. Hesap
-        açman gerekmez; veriler telefonunda kalır.
-      </ThemedText>
-      <Field label="Mevduattaki tutar" prefix="₺" keyboardType="decimal-pad" placeholder="100.000" value={amount} onChangeText={setAmount} />
-      <View style={styles.pair}>
-        <Field style={styles.flex} label="Yıllık brüt faiz" prefix="%" keyboardType="decimal-pad" placeholder="42" value={gross} onChangeText={setGross} />
-        <Field style={styles.flex} label="Vade" suffix="gün" keyboardType="number-pad" value={term} onChangeText={setTerm} />
-      </View>
-      <ThemedText type="small" themeColor="textSecondary">
-        Ne zamandır bu hesapta?
-      </ThemedText>
-      <Choice options={QUICK_PERIODS.map((p) => ({ value: String(p.months), label: p.label }))} value={months} onChange={setMonths} />
+    <>
+      {/* The lens that sells: the household budget's own inflation comes first, savings second. */}
+      <Card>
+        <ThemedText style={styles.title}>Hangi harcaman enflasyonunu yükseltiyor?</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Kira, market, ulaşım, okul… Herkesin enflasyonu farklı. Harcamalarından sana özel oranı hesaplayalım, seni en
+          çok hangi kalemin vurduğunu gör. Hesap açman gerekmez; veriler telefonunda kalır.
+        </ThemedText>
+        <Button title="Kendi enflasyonumu hesapla" onPress={() => router.push('/my-inflation')} />
+        <Button title="Harcamalarımı gir" kind="secondary" onPress={() => router.push('/butce')} />
+      </Card>
 
-      <Field
-        label="ENAG ya da kendi yıllık oranın (isteğe bağlı)"
-        suffix="%"
-        keyboardType="decimal-pad"
-        placeholder="ör. 60"
-        value={enag}
-        onChangeText={setEnag}
-      />
-
-      {result?.real !== undefined && result.realGain !== undefined && (
-        <View style={[styles.result, { backgroundColor: theme.info }]}>
-          <ThemedText type="small" style={{ color: theme.infoText }}>
-            Bugünün lirasıyla
-          </ThemedText>
-          <View style={styles.resultRow}>
-            <Pct ratio={result.real} size={30} />
-            <ThemedText style={[styles.verdict, { color: theme.infoText }]}>
-              {result.real >= 0 ? 'kazandın' : 'kaybettin'}
-            </ThemedText>
-          </View>
-          <ThemedText type="small" style={{ color: theme.infoText }}>
-            {result.realGain >= 0
-              ? `Alım gücün ${formatTL(result.realGain)} arttı.`
-              : `Alım gücün ${formatTL(-result.realGain)} eridi; faiz enflasyonu karşılamadı.`}{' '}
-            (TÜFE’ye göre)
-          </ThemedText>
-          {enagResult?.real !== undefined && (
-            <ThemedText type="small" style={{ color: theme.infoText }}>
-              ENAG / senin oranınla (%{String(enagRate).replace('.', ',')}):{' '}
-              <ThemedText type="smallBold" style={{ color: theme.infoText }}>
-                {enagResult.real >= 0 ? '+' : '−'}%{Math.abs(enagResult.real * 100).toFixed(1).replace('.', ',')}
-              </ThemedText>
-            </ThemedText>
-          )}
+      <Card>
+        <ThemedText style={styles.title}>Birikimin enflasyonu yeniyor mu?</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Mevduatını gir, TÜFE’ye ve ENAG’a karşı gerçekte ne kazandığını 30 saniyede gör.
+        </ThemedText>
+        <Field label="Mevduattaki tutar" prefix="₺" keyboardType="decimal-pad" placeholder="100.000" value={amount} onChangeText={setAmount} />
+        <View style={styles.pair}>
+          <Field style={styles.flex} label="Yıllık brüt faiz" prefix="%" keyboardType="decimal-pad" placeholder="42" value={gross} onChangeText={setGross} />
+          <Field style={styles.flex} label="Vade" suffix="gün" keyboardType="number-pad" value={term} onChangeText={setTerm} />
         </View>
-      )}
+        <ThemedText type="small" themeColor="textSecondary">
+          Ne zamandır bu hesapta?
+        </ThemedText>
+        <Choice options={QUICK_PERIODS.map((p) => ({ value: String(p.months), label: p.label }))} value={months} onChange={setMonths} />
 
-      <Button
-        title="Kaydet ve devam et"
-        disabled={!holding}
-        onPress={() => {
-          if (!holding) return;
-          saveHolding(holding);
-          if (enagRate) updateSettings({ customAnnualRate: enagRate });
-          void scheduleBudgetNudge();
-        }}
-      />
-      <ImportButtons />
-      <Button
-        title="Örnek birikimle dene"
-        kind="secondary"
-        onPress={() => addHoldings(samplePortfolio(today, newId))}
-      />
-    </Card>
+        <Field
+          label="ENAG ya da kendi yıllık oranın (isteğe bağlı)"
+          suffix="%"
+          keyboardType="decimal-pad"
+          placeholder="ör. 60"
+          value={enag}
+          onChangeText={setEnag}
+        />
+
+        {result?.real !== undefined && result.realGain !== undefined && (
+          <View style={[styles.result, { backgroundColor: theme.info }]}>
+            <ThemedText type="small" style={{ color: theme.infoText }}>
+              Bugünün lirasıyla
+            </ThemedText>
+            <View style={styles.resultRow}>
+              <Pct ratio={result.real} size={30} />
+              <ThemedText style={[styles.verdict, { color: theme.infoText }]}>
+                {result.real >= 0 ? 'kazandın' : 'kaybettin'}
+              </ThemedText>
+            </View>
+            <ThemedText type="small" style={{ color: theme.infoText }}>
+              {result.realGain >= 0
+                ? `Alım gücün ${formatTL(result.realGain)} arttı.`
+                : `Alım gücün ${formatTL(-result.realGain)} eridi; faiz enflasyonu karşılamadı.`}{' '}
+              (TÜFE’ye göre)
+            </ThemedText>
+            {enagResult?.real !== undefined && (
+              <ThemedText type="small" style={{ color: theme.infoText }}>
+                ENAG / senin oranınla (%{String(enagRate).replace('.', ',')}):{' '}
+                <ThemedText type="smallBold" style={{ color: theme.infoText }}>
+                  {enagResult.real >= 0 ? '+' : '−'}%{Math.abs(enagResult.real * 100).toFixed(1).replace('.', ',')}
+                </ThemedText>
+              </ThemedText>
+            )}
+          </View>
+        )}
+
+        <Button
+          title="Kaydet ve devam et"
+          disabled={!holding}
+          onPress={() => {
+            if (!holding) return;
+            saveHolding(holding);
+            if (enagRate) updateSettings({ customAnnualRate: enagRate });
+            void scheduleBudgetNudge();
+          }}
+        />
+        <ImportButtons />
+        <Button
+          title="Örnek birikimle dene"
+          kind="secondary"
+          onPress={() => addHoldings(samplePortfolio(today, newId))}
+        />
+      </Card>
+    </>
   );
 }
 

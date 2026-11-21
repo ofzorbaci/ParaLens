@@ -4,7 +4,7 @@ import feed from '../../data/feed-snapshot.json';
 import { buildCpiIndex } from '../cpi';
 import type { Feed } from '../feed-types';
 import type { RenewResult } from '../renew';
-import { averageRateFor, compoundToSimple, forwardReal, lastTermReal, liraOutcomes, liraSpread, renewRanking } from '../renew-forward';
+import { averageRateFor, compoundToSimple, forwardReal, lastTermReal, liraOutcomes, liraSpread, rankOffers, renewRanking } from '../renew-forward';
 import type { Holding, Settings } from '../types';
 import { usdReal } from '../usd-real';
 
@@ -104,5 +104,30 @@ describe('dollar-based real return', () => {
     // $1000 then, $1200 now, US prices +3%
     expect(r).toBeCloseTo(1.2 / 1.03 - 1, 8);
     expect(usdReal(gold, { cost: 40_000, value: undefined }, { usd: 50 }, f)).toBeUndefined();
+  });
+});
+
+describe('rankOffers', () => {
+  it('ranks bank offers by expected real return and shows the lira left behind', () => {
+    const r = rankOffers(
+      [
+        { bank: 'A Bankası', rate: 40 },
+        { bank: 'B Bankası', rate: 44 },
+        { bank: 'Boş', rate: 0 },
+      ],
+      32,
+      17.5,
+      25,
+      100_000,
+    );
+    expect(r.map((o) => o.bank)).toEqual(['B Bankası', 'A Bankası']);
+    expect(r[0].vsBest).toBe(0);
+    expect(r[1].vsBest).toBeGreaterThan(0);
+    expect(r[1].vsBest).toBeCloseTo(r[0].lira - r[1].lira);
+    expect(r[0].lira).toBeCloseTo(100_000 * forwardReal(44, 32, 17.5, 25));
+  });
+
+  it('returns nothing without a usable rate', () => {
+    expect(rankOffers([{ bank: '', rate: Number.NaN }], 32, undefined, 25, 1000)).toEqual([]);
   });
 });

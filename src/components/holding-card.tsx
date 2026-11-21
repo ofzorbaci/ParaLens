@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { openPaywall, usePremium } from '@/components/premium-gate';
+import { openPaywall, usePremium, useUnlocked } from '@/components/premium-gate';
 import { HoldingSource } from '@/components/source-line';
 import { ThemedText } from '@/components/themed-text';
 import { Card, Pct, StatStrip } from '@/components/ui';
@@ -59,7 +59,9 @@ export function HoldingCard({ holding: h, analysis: a }: { holding: Holding; ana
   const prices = useStore((s) => s.prices);
   const feed = useStore((s) => s.feed);
   const dollarBased = h.kind === 'usd' || h.kind === 'eur' || h.kind === 'gbp' || h.kind === 'gold' || isUsdPriced(h.kind);
-  const usd = dollarBased && premium ? usdReal(h, a, prices, feed) : undefined;
+  // Free during the first month, then Premium.
+  const usdOpen = useUnlocked('usdReal');
+  const usd = dollarBased && usdOpen ? usdReal(h, a, prices, feed) : undefined;
   const stats =
     h.kind === 'deposit' && h.grossRate !== undefined
       ? [
@@ -107,11 +109,11 @@ export function HoldingCard({ holding: h, analysis: a }: { holding: Holding; ana
             </ThemedText>
           )}
           {dollarBased &&
-            (premium ? (
+            (usdOpen ? (
               usd !== undefined && (
                 <View style={styles.usdRow}>
                   <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
-                    Dolar bazında reel (ABD enflasyonuyla)
+                    Dolar bazında reel (ABD enflasyonuyla){premium ? '' : ' · ilk ay ücretsiz'}
                   </ThemedText>
                   <Pct ratio={usd} size={15} />
                 </View>

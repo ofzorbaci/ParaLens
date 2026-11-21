@@ -11,9 +11,12 @@ import { RemindersCard } from '@/components/reminders-card';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card, Disclaimer, Screen, ScreenHeader } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
+import { isLaunched } from '@/lib/entitlements';
+import { useStore } from '@/state/store';
 
 /** Everything the user acts with — report card, calculators, yardstick, goals, reminders, portfolios. */
 export default function ToolsScreen() {
+  const hasPortfolios = useStore((s) => (s.settings.portfolios?.length ?? 0) > 0);
   return (
     <Screen>
       <ScreenHeader eyebrow="Ölç, karşılaştır, takip et" title="Araçlar" />
@@ -35,15 +38,20 @@ export default function ToolsScreen() {
 
       <InflationCard />
 
-      <PremiumGate feature="goals" pitch="“Reel getirim eksiye düşerse haber ver” alarmı ve bugünün lirasıyla bir hedef koy; ulaşınca bildirim gelsin.">
-        <GoalsCard />
-      </PremiumGate>
+      {isLaunched('goals') && (
+        <PremiumGate feature="goals" pitch="“Reel getirim eksiye düşerse haber ver” alarmı ve bugünün lirasıyla bir hedef koy; ulaşınca bildirim gelsin.">
+          <GoalsCard />
+        </PremiumGate>
+      )}
 
       <RemindersCard />
 
-      <PremiumGate feature="portfolios" pitch="Senin, eşinin, çocuğunun birikimini ayrı portföylerde izle.">
-        <PortfoliosCard />
-      </PremiumGate>
+      {/* Hidden at launch, but anyone who already made portfolios can still rename or delete them. */}
+      {(isLaunched('portfolios') || hasPortfolios) && (
+        <PremiumGate feature="portfolios" pitch="Senin, eşinin, çocuğunun birikimini ayrı portföylerde izle.">
+          <PortfoliosCard />
+        </PremiumGate>
+      )}
 
       <Disclaimer />
     </Screen>

@@ -25,7 +25,8 @@ export default function ImportScreen() {
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   const valid = rows?.filter((r) => r.holding) ?? [];
-  const invalid = rows?.filter((r) => !r.holding) ?? [];
+  const invalid = rows?.filter((r) => r.errors.length > 0) ?? [];
+  const notes = rows?.filter((r) => r.note && r.errors.length === 0) ?? [];
 
   const pick = async () => {
     setError(undefined);
@@ -63,8 +64,9 @@ export default function ImportScreen() {
       <Card>
         <ThemedText type="smallBold">2. Dosyanı seç</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Şablonun yanında başka uygulamaların ve aracı kurumların Excel/CSV dışa aktarımlarındaki yaygın sütunları da
-          tanırız (Sembol, Adet, Alış Fiyatı, Tarih…). Satış satırları atlanır.
+          Başka portföy uygulamalarından ya da aracı kurumundan aldığın Excel/CSV dosyasını da seçebilirsin; yaygın
+          sütunları tanırız (Sembol, Adet, Alış Fiyatı, İşlem Tutarı, Tarih…). İşlem geçmişindeki satışlar en eski
+          alışlardan düşülür, temettü satırları atlanır; elinde kalan varlıklar eklenir.
         </ThemedText>
         <Button title="Excel ya da CSV seç" onPress={pick} disabled={busy} />
         {busy && <ActivityIndicator />}
@@ -98,6 +100,11 @@ export default function ImportScreen() {
               </View>
             );
           })}
+          {notes.map((r) => (
+            <ThemedText key={`n${r.line}`} type="small" themeColor="textSecondary">
+              Satır {r.line}: {r.note}
+            </ThemedText>
+          ))}
           {invalid.map((r) => (
             <View key={r.line} style={[styles.row, { borderColor: theme.negativeBorder }]}>
               <ThemedText type="smallBold" style={{ color: theme.negative }}>

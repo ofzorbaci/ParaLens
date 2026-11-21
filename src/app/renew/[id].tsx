@@ -4,16 +4,16 @@ import { Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { openPaywall, PremiumGate, usePremium } from '@/components/premium-gate';
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, Choice, Disclaimer, Field, IconButton, Pct, Screen } from '@/components/ui';
+import { RenewForwardCard, signedTL } from '@/components/renew-forward-card';
+import { Button, Card, Choice, Disclaimer, IconButton, Pct, Screen } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useMasked } from '@/hooks/use-masked';
 import { useTheme } from '@/hooks/use-theme';
-import { defaultWithholding, depositValue, isTlDeposit } from '@/lib/deposit';
-import { formatDate, formatLongDate, formatMonth, formatPct, formatRate, formatTL, parseAmount, todayISO } from '@/lib/format';
+import { isTlDeposit } from '@/lib/deposit';
+import { formatLongDate, formatPct, todayISO } from '@/lib/format';
 import { nextMaturity, RENEW_WINDOWS, renewComparison, type RenewWindow } from '@/lib/renew';
-import { averageRateFor, compoundToSimple, forwardReal, lastTermReal, liraOutcomes, liraSpread, renewRanking } from '@/lib/renew-forward';
+import { liraOutcomes, liraSpread, renewRanking } from '@/lib/renew-forward';
 import { payout } from '@/lib/business-day';
-import type { Holding } from '@/lib/types';
 import { recordRenewView, setMaturityReminders, updateSettings, useStore } from '@/state/store';
 
 const WINDOW_LABEL: Record<RenewWindow, string> = { 1: 'Son 1 ay', 3: 'Son 3 ay', 12: 'Son 12 ay' };
@@ -98,7 +98,7 @@ export default function RenewScreen() {
             İlk vaden bizden: lira farkını ücretsiz görüyorsun
           </ThemedText>
           <ThemedText type="small" style={{ color: theme.infoText }}>
-            Bu vadede her şey açık. Sonraki vadelerde lira farkı ve 12 aylık hesap Premium’la.
+            Bu vadede banka karşılaştırması ve lira farkı açık. Sonraki vadelerde Premium’la.
           </ThemedText>
         </View>
       )}
@@ -152,10 +152,10 @@ export default function RenewScreen() {
       )}
 
       {gift ? (
-        <ForwardCard h={h} />
+        <RenewForwardCard h={h} />
       ) : (
-        <PremiumGate feature="renewForward" pitch="Bu vadede ortalama faizle ya da sana teklif edilen faizle yenilersen, önümüzdeki 12 ayda beklenen reel getirini gör.">
-          <ForwardCard h={h} />
+        <PremiumGate feature="renewForward" pitch="Bankaların teklif ettiği faizleri yan yana yaz; hangisinin 12 ayda bugünün lirasıyla kaç lira fazla kazandıracağını gör. İlk vaden ücretsizdi; sonraki vadeler Premium’la.">
+          <RenewForwardCard h={h} />
         </PremiumGate>
       )}
 
@@ -179,106 +179,12 @@ export default function RenewScreen() {
   );
 }
 
-function signedTL(v: number): string {
-  return `${v >= 0 ? '+' : '−'}${formatTL(Math.abs(v))}`;
-}
-
-/** "If you roll over at this rate, expected real return over 12 months." */
-function ForwardCard({ h }: { h: Holding }) {
-  const settings = useStore((s) => s.calcSettings);
-  const index = useStore((s) => s.cpi.index);
-  const depositRates = useStore((s) => s.feed.depositRates);
-  const expectations = useStore((s) => s.feed.expectations);
-  const [offer, setOffer] = useState('');
-  const term = h.termDays ?? 32;
-  const withholding = h.withholding ?? defaultWithholding(term);
-  const cpi = expectations.next12m.market;
-  // TCMB publishes compound rates; the bank quotes simple ones, and the user's own rate is simple too.
-  const averageCompound = averageRateFor(depositRates, term);
-  const average = averageCompound === undefined ? undefined : compoundToSimple(averageCompound, term);
-  const offered = parseAmount(offer);
-  const previous = lastTermReal(h, todayISO(), settings, index);
-  // Real gain over 12 months on today's balance, in today's lira.
-  const amount = depositValue(h, todayISO());
-  const lira = (ratio: number) => amount * ratio;
-  const current = h.grossRate !== undefined ? forwardReal(h.grossRate, term, withholding, cpi) : undefined;
-
-  return (
-    <Card>
-      <ThemedText style={styles.cardTitle}>Bu vadede yenilersen</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        Önümüzdeki 12 ay için beklenen enflasyon {formatRate(cpi)} (TCMB Piyasa Katılımcıları Anketi,{' '}
-        {formatMonth(expectations.month)}). {term} gün vade, {formatRate(withholding)} stopaj.
-      </ThemedText>
-      {average !== undefined && depositRates ? (
-        <Line
-          label={`Ortalama mevduat faiziyle (yıllık basit ${formatRate(average)})`}
-          detail={`TCMB, ${formatDate(depositRates.date)} haftası · TCMB’nin yayımladığı yıllık bileşik oran ${formatRate(averageCompound!)}`}
-          ratio={forwardReal(average, term, withholding, cpi)}
-          lira={lira(forwardReal(average, term, withholding, cpi))}
-        />
-      ) : (
-        <ThemedText type="small" themeColor="textSecondary">
-          Ortalama mevduat faizi verisi bekleniyor. Bankanın teklif ettiği faizi aşağıya yazarak hesaplayabilirsin.
-        </ThemedText>
-      )}
-      {h.grossRate !== undefined && (
-        <Line label={`Şu anki faizinle (${formatRate(h.grossRate)})`} ratio={current!} lira={lira(current!)} />
-      )}
-      <Field label="Sana teklif edilen faiz" prefix="%" keyboardType="decimal-pad" placeholder="ör. 42" value={offer} onChangeText={setOffer} />
-      {offered !== undefined && offered > 0 && (
-        <Line
-          label={`Teklifle (${formatRate(offered)})`}
-          ratio={forwardReal(offered, term, withholding, cpi)}
-          lira={lira(forwardReal(offered, term, withholding, cpi))}
-          detail={
-            current !== undefined
-              ? `Şu anki faizine göre 12 ayda bugünün lirasıyla ${signedTL(lira(forwardReal(offered, term, withholding, cpi) - current))}`
-              : undefined
-          }
-        />
-      )}
-      {previous !== undefined && <Line label="Geçen vadede gerçekleşen" ratio={previous} />}
-      <ThemedText type="small" themeColor="textSecondary">
-        Sağdaki lira, bugünkü bakiyenin 12 ayda bugünün lirasıyla kazanacağı ya da kaybedeceği alım gücü. Beklenti
-        hesabıdır; enflasyon farklı gelirse sonuç değişir. Yatırım tavsiyesi değildir.
-      </ThemedText>
-    </Card>
-  );
-}
-
-function Line({ label, detail, ratio, lira }: { label: string; detail?: string; ratio: number; lira?: number }) {
-  return (
-    <View style={styles.option}>
-      <View style={styles.flex}>
-        <ThemedText style={styles.lineLabel}>{label}</ThemedText>
-        {detail && (
-          <ThemedText type="small" themeColor="textSecondary">
-            {detail}
-          </ThemedText>
-        )}
-      </View>
-      <View style={styles.right}>
-        <Pct ratio={ratio} size={20} />
-        {lira !== undefined && (
-          <ThemedText type="small" themeColor="textSecondary">
-            {signedTL(lira)}
-          </ThemedText>
-        )}
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   title: { fontSize: 26, lineHeight: 32, fontWeight: 800 },
-  cardTitle: { fontSize: 19, lineHeight: 26, fontWeight: 700 },
   option: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: 6 },
   optionLabel: { fontSize: 17, lineHeight: 23, fontWeight: 600 },
-  lineLabel: { fontSize: 16, lineHeight: 22 },
-  right: { alignItems: 'flex-end' },
   rank: { fontSize: 20, lineHeight: 26, fontWeight: 800, width: 28 },
   locked: { borderRadius: 14, padding: Spacing.three, gap: 4, marginTop: Spacing.one },
 });

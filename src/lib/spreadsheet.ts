@@ -22,21 +22,30 @@ export const COLUMNS = [
   'Altın türü',
 ] as const;
 
-type Field = 'kind' | 'name' | 'date' | 'quantity' | 'cost' | 'current' | 'gross' | 'term' | 'withholding' | 'gold' | 'side';
+type Field = 'kind' | 'name' | 'date' | 'quantity' | 'cost' | 'total' | 'current' | 'gross' | 'term' | 'withholding' | 'gold' | 'side';
 
 /** Header spellings we accept, normalised (lower case, no accents or punctuation). */
 const HEADER_ALIASES: Record<Field, string[]> = {
   kind: ['tur', 'varlik turu', 'varlik tipi', 'tip', 'type', 'asset type'],
-  name: ['ad', 'isim', 'varlik', 'sembol', 'hisse', 'kod', 'fon kodu', 'symbol', 'ticker', 'name'],
-  date: ['alis tarihi', 'tarih', 'islem tarihi', 'date', 'baslangic tarihi'],
-  quantity: ['miktar', 'adet', 'lot', 'quantity', 'shares', 'pay adedi'],
-  cost: ['birim maliyet tl', 'birim maliyet', 'maliyet', 'alis fiyati', 'ortalama maliyet', 'fiyat', 'price', 'cost', 'tutar', 'anapara'],
+  name: [
+    'ad', 'isim', 'varlik', 'sembol', 'hisse', 'kod', 'fon kodu', 'symbol', 'ticker', 'name',
+    'hisse kodu', 'varlik kodu', 'menkul kiymet', 'kiymet', 'enstruman', 'instrument', 'asset',
+  ],
+  date: ['alis tarihi', 'tarih', 'islem tarihi', 'date', 'baslangic tarihi', 'alim tarihi', 'islem tarihi saati', 'tarih saat'],
+  quantity: ['miktar', 'adet', 'lot', 'quantity', 'shares', 'pay adedi', 'nominal', 'gerceklesen adet', 'gerceklesen miktar', 'islem adedi'],
+  cost: [
+    'birim maliyet tl', 'birim maliyet', 'maliyet', 'alis fiyati', 'ortalama maliyet', 'fiyat', 'price', 'cost', 'anapara',
+    'islem fiyati', 'gerceklesen fiyat', 'ortalama alis fiyati', 'maliyet fiyati', 'birim fiyat', 'ort maliyet', 'alim fiyati',
+    'average cost', 'avg cost',
+  ],
+  // A total instead of a unit price (broker statements): divided by the quantity.
+  total: ['tutar', 'toplam tutar', 'islem tutari', 'toplam', 'net tutar', 'amount', 'total'],
   current: ['guncel birim fiyat tl', 'guncel fiyat', 'son fiyat', 'current price'],
   gross: ['brut faiz', 'brut faiz %', 'faiz', 'faiz orani', 'interest'],
   term: ['vade gun', 'vade', 'term'],
   withholding: ['stopaj', 'stopaj %'],
   gold: ['altin turu'],
-  side: ['islem tipi', 'islem', 'alis satis', 'side'],
+  side: ['islem tipi', 'islem', 'alis satis', 'side', 'islem turu', 'yon', 'emir yonu', 'buy sell', 'action'],
 };
 
 function normalise(s: unknown): string {
@@ -99,7 +108,10 @@ export function toISODateCell(v: unknown): string | undefined {
   return undefined;
 }
 
-export type ImportRow = { line: number; holding?: Holding; errors: string[] };
+/** `note` explains a row that was handled on purpose (a sell subtracted, a dividend skipped). */
+export type ImportRow = { line: number; holding?: Holding; errors: string[]; note?: string };
+
+type Sell = { line: number; kind: HoldingKind; name: string; quantity: number };
 
 /** Maps a sheet (array of rows, first non-empty row = header) to holdings with per-row errors. */
 export function rowsToHoldings(rows: unknown[][], today: string, id: () => string): ImportRow[] {
@@ -113,6 +125,7 @@ export function rowsToHoldings(rows: unknown[][], today: string, id: () => strin
   }
 
   const out: ImportRow[] = [];
+  const sells: Sell[] = [];
   rows.slice(headerIndex + 1).forEach((r, k) => {
     if (!Array.isArray(r) || r.every((c) => String(c ?? '').trim() === '')) return;
     const line = headerIndex + k + 2;
@@ -120,14 +133,23 @@ export function rowsToHoldings(rows: unknown[][], today: string, id: () => strin
     const errors: string[] = [];
 
     const side = normalise(get('side'));
-    if (side && /sat/.test(side)) {
-      out.push({ line, errors: ['Satış satırı atlandı; ParaLens şimdilik eldeki varlıkları takip ediyor.'] });
+    if (side && /temettu|dividend|kar payi|bolunme|bedelsiz|split/.test(side)) {
+      out.push({ line, errors: [], note: 'Temettü ya da bölünme satırı; maliyeti değiştirmediği için atlandı.' });
       return;
     }
 
     const rawKind = normalise(get('kind'));
     // Exports with a symbol but no type column (e.g. stock trackers) are stocks.
     const kind: HoldingKind | undefined = rawKind ? KIND_ALIASES[rawKind] : col.name !== undefined ? 'stock' : undefined;
+
+    // A sell is subtracted from the earlier buys of the same asset once every row is read.
+    if (side && /sat|sell/.test(side)) {
+      const sold = toNumber(get('quantity'));
+      const soldName = String(get('name') ?? '').trim();
+      if (kind && soldName && sold && sold > 0) sells.push({ line, kind, name: upperName(kind, soldName), quantity: sold });
+      else out.push({ line, errors: ['Satış satırında varlık adı ya da adet okunamadı'] });
+      return;
+    }
     if (!kind) errors.push(`Tür anlaşılamadı: “${String(get('kind') ?? '')}”`);
     const goldType = kind === 'gold' ? (GOLD_ALIASES[normalise(get('gold'))] ?? GOLD_ALIASES[rawKind] ?? 'gram') : undefined;
 
@@ -135,12 +157,13 @@ export function rowsToHoldings(rows: unknown[][], today: string, id: () => strin
     if (!buyDate) errors.push('Alış tarihi okunamadı (yyyy-aa-gg)');
     else if (buyDate > today || buyDate < '2005-01-01') errors.push('Alış tarihi 2005 ile bugün arasında olmalı');
 
-    const cost = toNumber(get('cost'));
-    if (!(cost && cost > 0)) errors.push('Birim maliyet ya da tutar sıfırdan büyük olmalı');
     // "Dolar mevduat" / "Euro mevduat": principal in that currency under Miktar, the day's rate under Birim maliyet.
     const depositCurrency = kind === 'deposit' ? FX_DEPOSIT[rawKind] : undefined;
     const quantity = kind === 'deposit' && !depositCurrency ? 1 : toNumber(get('quantity'));
     if (!(quantity && quantity > 0)) errors.push('Miktar sıfırdan büyük olmalı');
+    const total = toNumber(get('total'));
+    const cost = toNumber(get('cost')) ?? (total && quantity ? total / quantity : undefined);
+    if (!(cost && cost > 0)) errors.push('Birim maliyet ya da tutar sıfırdan büyük olmalı');
     const gross = toNumber(get('gross'));
     const term = toNumber(get('term'));
     if (kind === 'deposit' && gross === undefined) errors.push('Mevduat için brüt faiz gerekli');
@@ -158,7 +181,7 @@ export function rowsToHoldings(rows: unknown[][], today: string, id: () => strin
       holding: {
         id: id(),
         kind,
-        name: kind === 'stock' || kind === 'fund' ? name.toLocaleUpperCase('tr-TR') : kind === 'usStock' || kind === 'etf' || kind === 'crypto' ? name.toUpperCase() : name,
+        name: upperName(kind, name),
         buyDate,
         quantity,
         unitCost: cost,
@@ -171,7 +194,49 @@ export function rowsToHoldings(rows: unknown[][], today: string, id: () => strin
       },
     });
   });
-  return out;
+  applySells(out, sells);
+  return out.sort((a, b) => a.line - b.line);
+}
+
+/** Tickers and fund codes upper case, the way the price feeds spell them. */
+function upperName(kind: HoldingKind, name: string): string {
+  if (kind === 'stock' || kind === 'fund') return name.toLocaleUpperCase('tr-TR');
+  if (kind === 'usStock' || kind === 'etf' || kind === 'crypto') return name.toUpperCase();
+  return name;
+}
+
+/**
+ * Subtracts each sell from the oldest buys of the same asset first (FIFO), so a broker's or
+ * another tracker's full trade history imports as what is held today. A lot sold in full is
+ * not added; the remaining lots keep their own date and cost.
+ */
+function applySells(out: ImportRow[], sells: Sell[]) {
+  for (const sell of sells) {
+    const lots = out
+      .filter((r) => r.holding && r.holding.kind === sell.kind && r.holding.name === sell.name)
+      .sort((a, b) => a.holding!.buyDate.localeCompare(b.holding!.buyDate));
+    let left = sell.quantity;
+    for (const lot of lots) {
+      if (left <= 0) break;
+      const take = Math.min(left, lot.holding!.quantity);
+      left -= take;
+      const remaining = lot.holding!.quantity - take;
+      if (remaining > 1e-9) lot.holding = { ...lot.holding!, quantity: remaining };
+      else {
+        lot.holding = undefined;
+        lot.note = 'Tamamı satılmış; eklenmedi.';
+      }
+    }
+    out.push(
+      left > 1e-9
+        ? { line: sell.line, errors: [`${sell.name} satışı dosyadaki alışlardan ${groupQty(left)} adet fazla`] }
+        : { line: sell.line, errors: [], note: `${sell.name}: ${groupQty(sell.quantity)} adet satış, önceki alışlardan düşüldü.` },
+    );
+  }
+}
+
+function groupQty(n: number): string {
+  return new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 8 }).format(n);
 }
 
 /** Reads an .xlsx/.xls/.csv file: the "İşlemler" sheet if present, else the first sheet. */

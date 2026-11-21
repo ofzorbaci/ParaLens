@@ -10,6 +10,7 @@ import { Spacing } from '@/constants/theme';
 import { useMasked } from '@/hooks/use-masked';
 import { useTheme } from '@/hooks/use-theme';
 import { byAccount, byCategory, dailyHeat, periodRange, PERIODS, previousRange, totals, weekdayIndex, type BreakdownRow, type PeriodKey } from '@/lib/budget/calc';
+import { isLaunched } from '@/lib/entitlements';
 import { formatMonth, formatTL, todayISO } from '@/lib/format';
 import { useBudget } from '@/state/budget';
 import { useStore } from '@/state/store';
@@ -24,6 +25,8 @@ export default function AnalysisScreen() {
   const txs = useBudget((s) => s.transactions);
   const rates = useStore((s) => s.prices);
   const premium = usePremium();
+  // Hidden at launch: the month's totals and categories stay, the Premium analyses wait.
+  const launched = isLaunched('budgetAnalysis');
   const [period, setPeriod] = useState<PeriodKey>('month');
   const today = todayISO();
   const range = periodRange(period, today);
@@ -39,11 +42,13 @@ export default function AnalysisScreen() {
         <ThemedText style={styles.title}>Analizler</ThemedText>
       </View>
 
-      <Choice<PeriodKey>
-        options={PERIODS.map((p) => ({ value: p.key, label: premium || p.key === 'month' ? p.label : `${p.label} 🔒` }))}
-        value={period}
-        onChange={(p) => (premium || p === 'month' ? setPeriod(p) : openPaywall('budgetAnalysis'))}
-      />
+      {launched && (
+        <Choice<PeriodKey>
+          options={PERIODS.map((p) => ({ value: p.key, label: premium || p.key === 'month' ? p.label : `${p.label} 🔒` }))}
+          value={period}
+          onChange={(p) => (premium || p === 'month' ? setPeriod(p) : openPaywall('budgetAnalysis'))}
+        />
+      )}
 
       <Card>
         <View style={styles.pair}>
@@ -75,15 +80,19 @@ export default function AnalysisScreen() {
         </ThemedText>
       </Card>
 
-      <PremiumGate feature="budgetAnalysis" pitch="Hangi gün ne kadar harcadığını takvim üzerinde renklerle gör; harcamanın yoğunlaştığı günleri yakala.">
-        <HeatMap month={range.to.slice(0, 7)} />
-      </PremiumGate>
+      {launched && (
+        <PremiumGate feature="budgetAnalysis" pitch="Hangi gün ne kadar harcadığını takvim üzerinde renklerle gör; harcamanın yoğunlaştığı günleri yakala.">
+          <HeatMap month={range.to.slice(0, 7)} />
+        </PremiumGate>
+      )}
 
       <Breakdown title="Kategoriye göre" rows={byCategory(txs, range, accounts, rates)} empty="Bu dönemde harcama yok." />
 
-      <PremiumGate feature="budgetAnalysis" pitch="Hangi hesaptan, hangi karttan ne kadar harcadığını gör.">
-        <Breakdown title="Hesaba göre" rows={byAccount(txs, range, accounts, rates)} empty="Bu dönemde harcama yok." accounts />
-      </PremiumGate>
+      {launched && (
+        <PremiumGate feature="budgetAnalysis" pitch="Hangi hesaptan, hangi karttan ne kadar harcadığını gör.">
+          <Breakdown title="Hesaba göre" rows={byAccount(txs, range, accounts, rates)} empty="Bu dönemde harcama yok." accounts />
+        </PremiumGate>
+      )}
     </Screen>
   );
 }

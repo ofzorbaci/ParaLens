@@ -11,6 +11,7 @@ import { Spacing } from '@/constants/theme';
 import { usePowerSeries } from '@/hooks/use-portfolio';
 import { useMasked } from '@/hooks/use-masked';
 import { useTheme } from '@/hooks/use-theme';
+import { isLaunched } from '@/lib/entitlements';
 import { formatMonth, formatPct, formatRate, formatTL, parseAmount, todayISO } from '@/lib/format';
 import { salaryErosion } from '@/lib/salary';
 import { depositTerms, scenarioReal } from '@/lib/scenario';
@@ -37,9 +38,11 @@ export function PowerSection() {
       <PremiumGate feature="benchmarks" pitch="Birikimini dolar, euro, gram altın, BIST 100, mevduat ve nakit TL ile bugünün lirasıyla aynı grafikte kıyasla; zaman makinesiyle geçmişteki birikimini bugünün fiyatlarıyla gör.">
         <CompareCard />
       </PremiumGate>
-      <PremiumGate feature="scenario" pitch="Enflasyon piyasa beklentisi, bugünkü oran ya da hanehalkı beklentisi gibi gelirse mevduatının reel getirisini hesapla.">
-        <ScenarioCard />
-      </PremiumGate>
+      {isLaunched('scenario') && (
+        <PremiumGate feature="scenario" pitch="Enflasyon piyasa beklentisi, bugünkü oran ya da hanehalkı beklentisi gibi gelirse mevduatının reel getirisini hesapla.">
+          <ScenarioCard />
+        </PremiumGate>
+      )}
       <SalaryCard />
     </>
   );

@@ -9,7 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Wordmark } from '@/components/wordmark';
 import { Button, Icon, Radius, Screen } from '@/components/ui';
 import { BrandFonts, Spacing } from '@/constants/theme';
-import { FOUNDER_YEARLY_UNTIL, LIFETIME_SEATS, PREMIUM_FEATURES, YEARLY_AFTER_FOUNDER, premiumShowcase, yearlySavings, type PremiumFeature } from '@/lib/entitlements';
+import { FOUNDER_YEARLY_UNTIL, LIFETIME_SEATS, OFFERED_FEATURES, YEARLY_AFTER_FOUNDER, premiumShowcase, yearlySavings, type PremiumFeature } from '@/lib/entitlements';
 import { formatLongDate, groupThousands } from '@/lib/format';
 import { loadPlans, manageSubscriptionsUrl, purchasesAvailable, type Plan } from '@/lib/purchases';
 import { purchasePlan, restorePurchases, setDevPremium, useStore } from '@/state/store';
@@ -29,6 +29,8 @@ const C = {
   accent: '#8EAEFF',
 };
 const SHOWN_FEATURES = 5;
+/** Yearly Kurucu first, monthly next; lifetime is one tap away so the screen shows two choices. */
+const ORDER: Record<Plan['period'], number> = { yearly: 0, monthly: 1, lifetime: 2 };
 
 const money = (n: number, currency: string) =>
   new Intl.NumberFormat('tr-TR', { style: 'currency', currency, maximumFractionDigits: 2 }).format(n);
@@ -51,21 +53,26 @@ export default function PaywallScreen() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string>();
   const [allFeatures, setAllFeatures] = useState(false);
+  const [showLifetime, setShowLifetime] = useState(false);
 
   useEffect(() => {
     loadPlans()
       .then((p) => {
-        setPlans(p);
-        setSelected(p[0]?.id);
+        const sorted = [...p].sort((a, b) => ORDER[a.period] - ORDER[b.period]);
+        setPlans(sorted);
+        setSelected(sorted[0]?.id);
       })
       .catch(() => setPlans([]));
   }, []);
 
   // The feature that brought the user here comes first, then what fits their money.
   const rank = (id: PremiumFeature) => (id === feature ? -1 : showcase.lead.includes(id) ? showcase.lead.indexOf(id) : 10);
-  const features = [...PREMIUM_FEATURES].sort((a, b) => rank(a.id) - rank(b.id));
+  const features = [...OFFERED_FEATURES].sort((a, b) => rank(a.id) - rank(b.id));
   const plan = plans?.find((p) => p.id === selected);
   const monthly = plans?.find((p) => p.period === 'monthly');
+  const hasSubscription = !!plans?.some((p) => p.period !== 'lifetime');
+  const shownPlans = plans?.filter((p) => p.period !== 'lifetime' || showLifetime || !hasSubscription || p.id === selected);
+  const hiddenLifetime = plans?.find((p) => p.period === 'lifetime' && !shownPlans?.includes(p));
 
   const run = async (job: () => Promise<boolean>, success: string, none?: string) => {
     setBusy(true);
@@ -122,6 +129,16 @@ export default function PaywallScreen() {
         )}
       </View>
 
+      <View style={[styles.promise, { borderColor: C.border }]}>
+        <ThemedText type="smallBold" style={{ color: C.text }}>
+          Süreklilik sözü
+        </ThemedText>
+        <ThemedText type="small" style={{ color: C.muted }}>
+          Geliştirme bir gün dursa da Premium’un açık kalır ve verilerin telefonunda durur. Fiyatlar herkese açık veri
+          akışından otomatik güncellenmeye devam eder.
+        </ThemedText>
+      </View>
+
       {premium.active ? (
         <View style={styles.block}>
           <ThemedText style={[styles.center, { color: C.text }]}>
@@ -153,7 +170,7 @@ export default function PaywallScreen() {
       ) : (
         <>
           <View style={styles.plans}>
-            {plans.map((p) => {
+            {shownPlans!.map((p) => {
               const on = p.id === selected;
               const saving = p.period === 'yearly' && monthly ? yearlySavings(monthly.price, p.price) : undefined;
               const best = p.period === 'yearly' && plans.length > 1;
@@ -208,7 +225,7 @@ export default function PaywallScreen() {
                       </ThemedText>
                     ) : null}
                   </View>
-                  <ThemedText style={[styles.price, { color: C.text }]}>
+                  <ThemedText style={[best ? styles.priceBest : styles.price, { color: C.text }]}>
                     {p.priceString}
                     <ThemedText type="small" style={{ color: C.muted }}>
                       {PER[p.period]}
@@ -217,6 +234,13 @@ export default function PaywallScreen() {
                 </Pressable>
               );
             })}
+            {hiddenLifetime && (
+              <Pressable accessibilityRole="button" onPress={() => setShowLifetime(true)} hitSlop={6} style={styles.skip}>
+                <ThemedText type="small" style={{ color: C.accent }}>
+                  Abonelik istemiyorum: ömür boyu seçeneği ({hiddenLifetime.priceString}) ›
+                </ThemedText>
+              </Pressable>
+            )}
           </View>
 
           <Pressable
@@ -302,6 +326,7 @@ const styles = StyleSheet.create({
   features: { gap: 14, marginVertical: Spacing.two },
   feature: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   block: { gap: Spacing.three, marginVertical: Spacing.two },
+  promise: { borderWidth: 1, borderRadius: Radius.card, padding: Spacing.three, gap: 4 },
   plans: { gap: 10 },
   plan: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, borderRadius: Radius.card, padding: Spacing.three },
   planWithBadge: { marginTop: 10 },
@@ -310,7 +335,8 @@ const styles = StyleSheet.create({
   cta: { backgroundColor: C.text, borderRadius: 999, paddingVertical: 16, alignItems: 'center', marginTop: Spacing.two },
   ctaText: { color: C.bg, fontSize: 17, lineHeight: 22, fontWeight: 800 },
   skip: { alignSelf: 'center', paddingVertical: 4 },
-  price: { fontSize: 18, lineHeight: 24, fontWeight: 800 },
+  price: { fontSize: 16, lineHeight: 22, fontWeight: 700 },
+  priceBest: { fontSize: 20, lineHeight: 26, fontWeight: 800 },
   fine: { textAlign: 'center', fontSize: 12, lineHeight: 17 },
   links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: Spacing.four, marginTop: Spacing.two },
 });

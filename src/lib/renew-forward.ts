@@ -62,3 +62,23 @@ export function liraSpread(result: RenewResult, h: Holding, today: string): numb
   const xs = liraOutcomes(result, h, today).map((x) => x.lira);
   return xs.length > 1 ? Math.max(...xs) - Math.min(...xs) : 0;
 }
+
+export type BankOffer = { bank: string; rate: number };
+export type RankedOffer = BankOffer & { real: number; lira: number; vsBest: number };
+
+/**
+ * Maturity-day bank comparison: the rates the user was quoted, from the best to the worst expected
+ * real return over 12 months, each with its gain in today's lira on `amount` and how many lira it
+ * leaves behind against the best offer (0 for the best).
+ */
+export function rankOffers(offers: BankOffer[], termDays: number, withholding: number | undefined, expectedCpi: number, amount: number): RankedOffer[] {
+  const ranked = offers
+    .filter((o) => Number.isFinite(o.rate) && o.rate > 0)
+    .map((o) => {
+      const real = forwardReal(o.rate, termDays, withholding, expectedCpi);
+      return { ...o, real, lira: amount * real, vsBest: 0 };
+    })
+    .sort((a, b) => b.real - a.real);
+  const best = ranked[0]?.lira ?? 0;
+  return ranked.map((o) => ({ ...o, vsBest: best - o.lira }));
+}
