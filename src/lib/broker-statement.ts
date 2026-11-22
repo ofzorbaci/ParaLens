@@ -1,4 +1,6 @@
-// Broker cash statements ("Hesap Ekstresi" PDF), e.g. Osmanlı Yatırım. Every stock trade is one
+// Broker cash statements ("Hesap Ekstresi" PDF). Built on Osmanlı Yatırım's two layouts and
+// tolerant of the usual variants (upper case, Alım/Satım, "Adet x", "@", side first, no trade
+// date); other brokers are not verified until we have one of their statements. Every trade is one
 // ledger line: "08/01/2026 06/01 SNGYO 1.063x4,61 Satış 0,00 4.900,43 4.835,29" (booking date,
 // trade date, ticker, quantity × price, side), or in the newer layout
 // "19/09/2026 19/09/2026 Menkul 18/09 ASTOR 5 Adetx255,50 Satış 1.277,50 9.850,05".
@@ -8,16 +10,32 @@
 import { parseAmount } from './format';
 import { rowsToHoldings, type ImportRow } from './spreadsheet';
 
-// Booking date, then (newer layout) a value date and the line type, then the trade itself.
-const LEAD = String.raw`^(\d{2})\/(\d{2})\/(\d{4})\s+(?:\d{2}\/\d{2}\/\d{4}\s+)?(?:(?:Menkul|Nakit)\s+)?`;
-const TRADE = new RegExp(LEAD + String.raw`(\d{2})\/(\d{2})\s+([A-ZÇĞİÖŞÜ0-9]{3,6})\s+([\d.,]+)\s*(?:Adet\s*)?x\s*([\d.,]+)\s+(Alış|Satış)(?=\s|$)`);
-const DIVIDEND = new RegExp(LEAD + String.raw`(?:\d{2}\/\d{2}\s+)?([A-ZÇĞİÖŞÜ0-9]{3,6})\s+([\d.,]+)\s+Adet\s+%[\d.,]+\s+Temettü`);
+// Booking date (dd/mm/yyyy, dd.mm.yyyy or dd-mm-yyyy), then optionally a value date and the line
+// type ("Menkul", "Nakit"), then the trade itself, with or without its own dd/mm trade date.
+const DATE = String.raw`(\d{2})[./-](\d{2})[./-](\d{4})`;
+const LEAD = String.raw`^${DATE}\s+(?:\d{2}[./-]\d{2}[./-]\d{4}\s+)?(?:(?:Menkul|Nakit|MENKUL|NAKİT)\s+)?(?:(\d{2})[./-](\d{2})\s+)?`;
+const TICKER = String.raw`([A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜ0-9]{2,5})`;
+// "1.063x4,61", "5 Adetx255,50", "5 Adet x 255,50", "10 Lot x 30,00", "10 @ 30,00"
+const QTY_PRICE = String.raw`([\d.,]+)\s*(?:Adet|ADET|Ad\.?|AD|Lot|LOT)?\s*[xX×@]\s*([\d.,]+)`;
+const SIDE = String.raw`(Alış|Alım|Satış|Satım|ALIŞ|ALIM|SATIŞ|SATIM|Alis|Satis|ALIS|SATIS|Buy|Sell|BUY|SELL)`;
+// The side after the trade ("ASTOR 5 Adetx255,50 Satış") or before it ("ALIŞ ASTOR 5 Adet x 255,50").
+const TRADE_AFTER = new RegExp(LEAD + String.raw`${TICKER}\s+${QTY_PRICE}\s+${SIDE}(?=\s|$)`);
+const TRADE_BEFORE = new RegExp(LEAD + String.raw`${SIDE}\s+${TICKER}\s+${QTY_PRICE}(?=\s|$)`);
+const DIVIDEND = new RegExp(LEAD + String.raw`${TICKER}\s+([\d.,]+)\s+Adet\s+%[\d.,]+\s+Temettü`);
 
 type Trade = { date: string; name: string; quantity: string; price: string; side: 'Alış' | 'Satış' };
 type Dividend = { date: string; name: string; quantity: number };
 
-/** The trade date's year: a trade on 31/12 booked on 02/01 belongs to the year before. */
-function tradeDate(bookDay: string, bookMonth: string, bookYear: string, day: string, month: string): string {
+function sideOf(word: string): Trade['side'] {
+  return /^(al|buy)/i.test(word) ? 'Alış' : 'Satış';
+}
+
+/**
+ * The trade date: its own dd/mm when the line has one (a trade on 31/12 booked on 02/01 belongs
+ * to the year before), else the booking date.
+ */
+function tradeDate(bookDay: string, bookMonth: string, bookYear: string, day?: string, month?: string): string {
+  if (!day || !month) return `${bookYear}-${bookMonth}-${bookDay}`;
   const year = Number(month) > Number(bookMonth) ? Number(bookYear) - 1 : Number(bookYear);
   return `${year}-${month}-${day}`;
 }
@@ -27,14 +45,19 @@ function read(lines: string[]): { trades: Trade[]; dividends: Dividend[] } {
   const dividends: Dividend[] = [];
   for (const raw of lines) {
     const line = raw.replace(/\s+/g, ' ').trim();
-    const t = TRADE.exec(line);
-    if (t) {
-      trades.push({ date: tradeDate(t[1], t[2], t[3], t[4], t[5]), name: t[6], quantity: t[7], price: t[8], side: t[9] as Trade['side'] });
+    const a = TRADE_AFTER.exec(line);
+    if (a) {
+      trades.push({ date: tradeDate(a[1], a[2], a[3], a[4], a[5]), name: a[6], quantity: a[7], price: a[8], side: sideOf(a[9]) });
+      continue;
+    }
+    const b = TRADE_BEFORE.exec(line);
+    if (b) {
+      trades.push({ date: tradeDate(b[1], b[2], b[3], b[4], b[5]), name: b[7], quantity: b[8], price: b[9], side: sideOf(b[6]) });
       continue;
     }
     const d = DIVIDEND.exec(line);
-    const quantity = d ? parseAmount(d[5]) : undefined;
-    if (d && quantity) dividends.push({ date: `${d[3]}-${d[2]}-${d[1]}`, name: d[4], quantity });
+    const quantity = d ? parseAmount(d[7]) : undefined;
+    if (d && quantity) dividends.push({ date: `${d[3]}-${d[2]}-${d[1]}`, name: d[6], quantity });
   }
   return { trades, dividends };
 }

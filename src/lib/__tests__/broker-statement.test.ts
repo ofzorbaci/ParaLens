@@ -64,3 +64,31 @@ describe('broker statement PDF', () => {
     expect(r.every((x) => x.errors.length === 0)).toBe(true);
   });
 });
+
+describe('other brokers’ usual wording', () => {
+  it('reads upper case, Alım/Satım, "Adet x", "@", the side first and dotted dates', () => {
+    const lines = [
+      '05.02.2026 THYAO 20 Adet x 300,00 ALIŞ -6.000,00 1.000,00',
+      '06.02.2026 06.02.2026 ALIM KCHOL 10 Lot x 150,50 -1.505,00 0,00',
+      '07-03-2026 SATIŞ THYAO 5 ADET X 320,00 1.600,00 0,00',
+      '08/04/2026 07/04 SISE 100 @ 40,00 Alım -4.000,00 0,00',
+      '09/04/2026 SISE 40x45,00 Satım 1.800,00 0,00',
+    ];
+    const r = parseBrokerStatement(lines, today, id);
+    expect(r.filter((x) => x.holding).map((x) => [x.holding!.name, x.holding!.quantity, x.holding!.unitCost, x.holding!.buyDate])).toEqual([
+      ['THYAO', 15, 300, '2026-02-05'],
+      ['KCHOL', 10, 150.5, '2026-02-06'],
+      ['SISE', 60, 40, '2026-04-07'],
+    ]);
+  });
+
+  it('ignores fee, interest and short-close lines', () => {
+    expect(
+      isBrokerStatement([
+        '14/09/2026 14/09/2026 Menkul 14/09 FROTO 20 xAlışOrt 82,134 AçSat Tl Kapat 1.642,68 14.220,18',
+        '08/01/2026 06/01 BIST Komisyon ve BMV (İşlem Hacmi : 4.900,43) 1,54 0,00 -64,98',
+        '20/11/2026 20/11/2026 Nakit 20/11 Nema Stopaj (Brüt: 14,53) -2,54 9.686,34',
+      ]),
+    ).toBe(false);
+  });
+});

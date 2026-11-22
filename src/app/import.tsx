@@ -52,7 +52,7 @@ export default function ImportScreen() {
         const lines = await pdfLines(picked.data, (done, total) => setProgress(`Ekstre okunuyor: ${done} / ${total} sayfa`));
         if (!isBrokerStatement(lines)) {
           setRows(undefined);
-          setError('Bu PDF’te hisse alış ya da satış satırı bulunamadı. Aracı kurumunun hesap ekstresini seç.');
+          setError('Bu PDF’te hisse alış ya da satış satırı bulamadık. Aracı kurumunun hesap ekstresini seçtiysen, bu kurumun düzenini henüz tanımıyor olabiliriz: varlıklarını Excel şablonuyla yükleyebilirsin.');
           return;
         }
         setRows(parseBrokerStatement(lines, todayISO(), newId));
