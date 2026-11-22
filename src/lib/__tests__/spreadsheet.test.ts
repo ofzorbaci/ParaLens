@@ -82,7 +82,8 @@ describe('import', () => {
     expect(r[1].holding).toMatchObject({ name: 'THYAO', quantity: 30, unitCost: 320, buyDate: '2026-02-10' });
     expect(r[2].note).toMatch(/120 adet satış/);
     expect(r[3].note).toMatch(/Temettü/);
-    expect(r[4].errors[0]).toMatch(/EREGL satışı dosyadaki alışlardan 5 adet fazla/);
+    expect(r[4].errors).toEqual([]);
+    expect(r[4].note).toMatch(/EREGL: 5 adet satışın alışı dosyada yok/);
   });
 
   it('reads semicolon CSV with decimal commas', () => {

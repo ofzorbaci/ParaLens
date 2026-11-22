@@ -7,6 +7,8 @@ import { Button, Card, Disclaimer, IconButton, Screen } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDate, formatTL, todayISO } from '@/lib/format';
+import { isBrokerStatement, parseBrokerStatement } from '@/lib/broker-statement';
+import { pdfLines, PdfTimeout } from '@/lib/budget/statement-pdf';
 import { parseSpreadsheet, templateWorkbook, type ImportRow } from '@/lib/spreadsheet';
 import { pickSpreadsheet, shareWorkbook } from '@/lib/spreadsheet-file';
 import { KIND_LABELS } from '@/lib/types';
@@ -22,11 +24,13 @@ export default function ImportScreen() {
   const [rows, setRows] = useState<ImportRow[]>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const [progress, setProgress] = useState<string>();
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   const valid = rows?.filter((r) => r.holding) ?? [];
   const invalid = rows?.filter((r) => r.errors.length > 0) ?? [];
-  const notes = rows?.filter((r) => r.note && r.errors.length === 0) ?? [];
+  const notes = rows?.filter((r) => r.note && r.errors.length === 0 && !r.routine) ?? [];
+  const routine = rows?.filter((r) => r.routine).length ?? 0;
 
   const pick = async () => {
     setError(undefined);
@@ -35,12 +39,29 @@ export default function ImportScreen() {
       const picked = await pickSpreadsheet();
       if (!picked) return;
       setFile(picked.name);
+      // A broker's PDF statement ("Hesap Ekstresi"): its trade lines go through the same importer.
+      if (/\.pdf$/i.test(picked.name) && typeof picked.data !== 'string') {
+        setProgress('PDF açılıyor…');
+        const lines = await pdfLines(picked.data, (done, total) => setProgress(`Ekstre okunuyor: ${done} / ${total} sayfa`));
+        if (!isBrokerStatement(lines)) {
+          setRows(undefined);
+          setError('Bu PDF’te hisse alış ya da satış satırı bulunamadı. Aracı kurumunun hesap ekstresini seç.');
+          return;
+        }
+        setRows(parseBrokerStatement(lines, todayISO(), newId));
+        return;
+      }
       const parsed = parseSpreadsheet(picked.data, todayISO(), newId);
       setRows(parsed);
       if (parsed.length === 0) setError('Dosyada okunacak satır bulunamadı.');
-    } catch {
-      setError('Dosya okunamadı. Excel (.xlsx, .xls) ya da CSV olduğundan emin ol.');
+    } catch (e) {
+      if (e instanceof PdfTimeout) {
+        setError(`${e.message}: okuma çok uzun sürdü. Uygulamayı kapatıp yeniden dene; sürerse bize bildir.`);
+        return;
+      }
+      setError('Dosya okunamadı. Excel (.xlsx, .xls), CSV ya da aracı kurum PDF ekstresi olduğundan emin ol.');
     } finally {
+      setProgress(undefined);
       setBusy(false);
     }
   };
@@ -64,12 +85,18 @@ export default function ImportScreen() {
       <Card>
         <ThemedText type="smallBold">2. Dosyanı seç</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Başka portföy uygulamalarından ya da aracı kurumundan aldığın Excel/CSV dosyasını da seçebilirsin; yaygın
-          sütunları tanırız (Sembol, Adet, Alış Fiyatı, İşlem Tutarı, Tarih…). İşlem geçmişindeki satışlar en eski
-          alışlardan düşülür, temettü satırları atlanır; elinde kalan varlıklar eklenir.
+          Başka portföy uygulamalarından ya da aracı kurumundan aldığın Excel/CSV dosyasını ya da PDF hesap ekstresini de
+          seçebilirsin; yaygın sütunları tanırız (Sembol, Adet, Alış Fiyatı, İşlem Tutarı, Tarih…). İşlem geçmişindeki
+          satışlar en eski alışlardan düşülür, temettü satırları atlanır; elinde kalan varlıklar eklenir. Ekstre yalnızca
+          seçtiğin tarih aralığını kapsar: daha önce aldığın hisseler için not düşeriz.
         </ThemedText>
-        <Button title="Excel ya da CSV seç" onPress={pick} disabled={busy} />
+        <Button title="Excel, CSV ya da PDF seç" onPress={pick} disabled={busy} />
         {busy && <ActivityIndicator />}
+        {progress && (
+          <ThemedText type="small" themeColor="textSecondary">
+            {progress}
+          </ThemedText>
+        )}
         {error && <ThemedText type="small" style={{ color: theme.negative }}>{error}</ThemedText>}
       </Card>
 
@@ -100,6 +127,11 @@ export default function ImportScreen() {
               </View>
             );
           })}
+          {routine > 0 && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {routine} satış ve kapanan alış eşleştirildi; elinde kalan adetler hesaplandı.
+            </ThemedText>
+          )}
           {notes.map((r) => (
             <ThemedText key={`n${r.line}`} type="small" themeColor="textSecondary">
               Satır {r.line}: {r.note}

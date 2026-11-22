@@ -109,7 +109,14 @@ export function toISODateCell(v: unknown): string | undefined {
 }
 
 /** `note` explains a row that was handled on purpose (a sell subtracted, a dividend skipped). */
-export type ImportRow = { line: number; holding?: Holding; errors: string[]; note?: string };
+export type ImportRow = {
+  line: number;
+  holding?: Holding;
+  errors: string[];
+  note?: string;
+  /** a sell matched to its buys, or a lot sold in full: counted, not listed one by one */
+  routine?: boolean;
+};
 
 type Sell = { line: number; kind: HoldingKind; name: string; quantity: number };
 
@@ -225,12 +232,14 @@ function applySells(out: ImportRow[], sells: Sell[]) {
       else {
         lot.holding = undefined;
         lot.note = 'Tamamı satılmış; eklenmedi.';
+        lot.routine = true;
       }
     }
     out.push(
       left > 1e-9
-        ? { line: sell.line, errors: [`${sell.name} satışı dosyadaki alışlardan ${groupQty(left)} adet fazla`] }
-        : { line: sell.line, errors: [], note: `${sell.name}: ${groupQty(sell.quantity)} adet satış, önceki alışlardan düşüldü.` },
+        ? // Usually shares bought before the file starts (a statement covers a date range).
+          { line: sell.line, errors: [], note: `${sell.name}: ${groupQty(left)} adet satışın alışı dosyada yok; dosyanın başladığı tarihten önce alınmış olmalı.` }
+        : { line: sell.line, errors: [], note: `${sell.name}: ${groupQty(sell.quantity)} adet satış, önceki alışlardan düşüldü.`, routine: true },
     );
   }
 }
