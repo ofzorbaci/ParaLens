@@ -4,7 +4,7 @@
 
 import * as XLSX from 'xlsx';
 
-import { parseAmount, toISODate } from './format';
+import { formatLongDate, parseAmount, toISODate } from './format';
 import { GOLD_LABELS, KIND_LABELS, type GoldType, type Holding, type HoldingKind } from './types';
 
 export const SHEET = 'İşlemler';
@@ -309,4 +309,79 @@ export function templateWorkbook(): Uint8Array {
 /** Every holding, in the same columns the importer reads, so the file round-trips. */
 export function exportWorkbook(holdings: Holding[]): Uint8Array {
   return book(holdings.filter((h) => !h.sample).map(holdingRow));
+}
+
+/** The same lot: asset, buy date, quantity and unit cost all match. */
+export function sameLot(a: Holding, b: Holding): boolean {
+  const near = (x: number | undefined, y: number | undefined) => (x ?? 0) === (y ?? 0) || Math.abs((x ?? 0) - (y ?? 0)) < 1e-6;
+  return (
+    a.kind === b.kind &&
+    a.name.toLocaleUpperCase('tr-TR') === b.name.toLocaleUpperCase('tr-TR') &&
+    a.buyDate === b.buyDate &&
+    near(a.quantity, b.quantity) &&
+    near(a.unitCost, b.unitCost) &&
+    (a.depositCurrency ?? '') === (b.depositCurrency ?? '') &&
+    (a.goldType ?? '') === (b.goldType ?? '')
+  );
+}
+
+/**
+ * Leaves out lots the portfolio already has, so importing two overlapping statements (or the same
+ * file twice) adds each lot once. Each existing lot is matched at most once, so two genuinely
+ * identical buys in one file still both count when only one is saved.
+ */
+export function withoutExisting(rows: ImportRow[], existing: Holding[]): { rows: ImportRow[]; already: number } {
+  const pool = [...existing];
+  let already = 0;
+  const kept = rows.map((r) => {
+    if (!r.holding) return r;
+    const i = pool.findIndex((h) => sameLot(h, r.holding!));
+    if (i < 0) return r;
+    pool.splice(i, 1);
+    already += 1;
+    return { ...r, holding: undefined, note: `${r.holding.name}: bu alış zaten ekli; tekrar eklenmedi.`, routine: true };
+  });
+  return { rows: kept, already };
+}
+
+const DAY = 86_400_000;
+
+/**
+ * One line per asset: several buys of the same stock, fund or coin become one holding with the
+ * weighted average cost. Real return needs a buy date, so the merged line takes the
+ * money-weighted average date (when the money went in, on average) rather than the first buy,
+ * which would charge the later buys inflation they never saw. Deposits stay separate (each has
+ * its own rate and term).
+ */
+/** Same asset: what mergeLots groups by. */
+export function lotKey(h: Holding): string {
+  return `${h.kind}|${h.name.toLocaleUpperCase('tr-TR')}|${h.goldType ?? ''}|${h.depositCurrency ?? ''}`;
+}
+
+export function mergeLots(rows: ImportRow[]): ImportRow[] {
+  const key = lotKey;
+  const groups = new Map<string, ImportRow[]>();
+  for (const r of rows) {
+    if (!r.holding || r.holding.kind === 'deposit') continue;
+    const k = key(r.holding);
+    groups.set(k, [...(groups.get(k) ?? []), r]);
+  }
+  const merged = new Map<ImportRow, ImportRow>();
+  for (const lots of groups.values()) {
+    if (lots.length < 2) continue;
+    const hs = lots.map((r) => r.holding!);
+    const quantity = hs.reduce((s, h) => s + h.quantity, 0);
+    const cost = hs.reduce((s, h) => s + h.quantity * h.unitCost, 0);
+    const when = hs.reduce((s, h) => s + h.quantity * h.unitCost * Date.parse(`${h.buyDate}T00:00:00Z`), 0) / cost;
+    const buyDate = new Date(Math.round(when / DAY) * DAY).toISOString().slice(0, 10);
+    const first = lots[0];
+    const unitCost = cost / quantity;
+    merged.set(first, {
+      ...first,
+      holding: { ...hs[0], quantity, unitCost, buyDate, currentPrice: hs.find((h) => h.currentPrice !== undefined)?.currentPrice },
+      note: `${hs[0].name}: ${lots.length} alış tek satırda birleştirildi; ağırlıklı ortalama maliyet ₺${new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(unitCost)}, ortalama alış tarihi ${formatLongDate(buyDate)}.`,
+    });
+    for (const r of lots.slice(1)) merged.set(r, { ...r, holding: undefined, note: `${r.holding!.name}: birleştirildi.`, routine: true });
+  }
+  return rows.map((r) => merged.get(r) ?? r);
 }

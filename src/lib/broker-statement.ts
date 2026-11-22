@@ -1,13 +1,17 @@
 // Broker cash statements ("Hesap Ekstresi" PDF), e.g. Osmanlı Yatırım. Every stock trade is one
 // ledger line: "08/01/2026 06/01 SNGYO 1.063x4,61 Satış 0,00 4.900,43 4.835,29" (booking date,
-// trade date, ticker, quantity × price, side). Fees, interest and margin lines are ignored. The
-// trades go through the spreadsheet importer, so sells are subtracted the same way (FIFO).
+// trade date, ticker, quantity × price, side), or in the newer layout
+// "19/09/2026 19/09/2026 Menkul 18/09 ASTOR 5 Adetx255,50 Satış 1.277,50 9.850,05".
+// Fees, interest and margin lines are ignored. The trades go through the spreadsheet importer,
+// so sells are subtracted the same way (FIFO).
 
 import { parseAmount } from './format';
 import { rowsToHoldings, type ImportRow } from './spreadsheet';
 
-const TRADE = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})\/(\d{2})\s+([A-ZÇĞİÖŞÜ0-9]{3,6})\s+([\d.,]+)\s*(?:Adet\s*)?x\s*([\d.,]+)\s+(Alış|Satış)(?=\s|$)/;
-const DIVIDEND = /^(\d{2})\/(\d{2})\/(\d{4})\s+(?:\d{2}\/\d{2}\s+)?([A-ZÇĞİÖŞÜ0-9]{3,6})\s+([\d.,]+)\s+Adet\s+%[\d.,]+\s+Temettü/;
+// Booking date, then (newer layout) a value date and the line type, then the trade itself.
+const LEAD = String.raw`^(\d{2})\/(\d{2})\/(\d{4})\s+(?:\d{2}\/\d{2}\/\d{4}\s+)?(?:(?:Menkul|Nakit)\s+)?`;
+const TRADE = new RegExp(LEAD + String.raw`(\d{2})\/(\d{2})\s+([A-ZÇĞİÖŞÜ0-9]{3,6})\s+([\d.,]+)\s*(?:Adet\s*)?x\s*([\d.,]+)\s+(Alış|Satış)(?=\s|$)`);
+const DIVIDEND = new RegExp(LEAD + String.raw`(?:\d{2}\/\d{2}\s+)?([A-ZÇĞİÖŞÜ0-9]{3,6})\s+([\d.,]+)\s+Adet\s+%[\d.,]+\s+Temettü`);
 
 type Trade = { date: string; name: string; quantity: string; price: string; side: 'Alış' | 'Satış' };
 type Dividend = { date: string; name: string; quantity: number };

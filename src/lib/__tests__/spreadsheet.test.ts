@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { exportWorkbook, parseSpreadsheet, rowsToHoldings, templateWorkbook, toISODateCell } from '../spreadsheet';
+import { exportWorkbook, parseSpreadsheet, rowsToHoldings, templateWorkbook, toISODateCell, mergeLots, withoutExisting } from '../spreadsheet';
 import type { Holding } from '../types';
 
 let n = 0;
@@ -110,5 +110,61 @@ describe('export', () => {
     const rows = parseSpreadsheet(templateWorkbook(), today, id);
     expect(rows).toHaveLength(1);
     expect(rows[0].holding?.kind).toBe('deposit');
+  });
+});
+
+describe('importing the same trades twice', () => {
+  const rows = [
+    ['Sembol', 'İşlem Tipi', 'Adet', 'Alış Fiyatı', 'Tarih'],
+    ['BIMAS', 'Alış', 10, 376.5, '03.06.2026'],
+    ['ASTOR', 'Alış', 5, 255.25, '17.09.2026'],
+  ];
+
+  it('adds nothing that the portfolio already has', () => {
+    const first = rowsToHoldings(rows, today, id).map((r) => r.holding!);
+    const again = withoutExisting(rowsToHoldings(rows, today, id), first);
+    expect(again.already).toBe(2);
+    expect(again.rows.filter((r) => r.holding)).toEqual([]);
+  });
+
+  it('keeps a different lot of the same stock and matches each saved lot once', () => {
+    const saved = [rowsToHoldings(rows, today, id)[0].holding!];
+    const twice = [...rows, ['BIMAS', 'Alış', 10, 376.5, '03.06.2026'], ['BIMAS', 'Alış', 10, 380, '04.06.2026']];
+    const r = withoutExisting(rowsToHoldings(twice, today, id), saved);
+    expect(r.already).toBe(1);
+    expect(r.rows.filter((x) => x.holding).map((x) => [x.holding!.name, x.holding!.unitCost])).toEqual([
+      ['ASTOR', 255.25],
+      ['BIMAS', 376.5],
+      ['BIMAS', 380],
+    ]);
+  });
+});
+
+describe('several buys of the same stock', () => {
+  it('become one line with the weighted cost and the money-weighted date', () => {
+    const rows = [
+      ['Sembol', 'İşlem Tipi', 'Adet', 'Alış Fiyatı', 'Tarih'],
+      ['HLGYO', 'Alış', 100, 6, '01.01.2026'],
+      ['HLGYO', 'Alış', 300, 8, '01.04.2026'],
+      ['BIMAS', 'Alış', 10, 376.5, '03.06.2026'],
+    ];
+    const r = mergeLots(rowsToHoldings(rows, today, id));
+    const held = r.filter((x) => x.holding).map((x) => x.holding!);
+    expect(held).toHaveLength(2);
+    // 100 × 6 + 300 × 8 = 3.000 for 400 shares → 7,50; 600 TL in January, 2.400 TL in April.
+    expect(held[0]).toMatchObject({ name: 'HLGYO', quantity: 400, unitCost: 7.5 });
+    expect(held[0].buyDate).toBe('2026-03-14');
+    expect(held[1]).toMatchObject({ name: 'BIMAS', quantity: 10 });
+    expect(r[0].note).toMatch(/2 alış tek satırda birleştirildi/);
+    expect(r[1].routine).toBe(true);
+  });
+
+  it('keeps deposits apart', () => {
+    const rows = [
+      ['Tür', 'Ad', 'Alış tarihi', 'Miktar', 'Birim maliyet (TL)', 'Brüt faiz (%)', 'Vade (gün)'],
+      ['TL mevduat', 'Mevduat', '2026-01-01', 1, 100000, 40, 32],
+      ['TL mevduat', 'Mevduat', '2026-02-01', 1, 50000, 42, 32],
+    ];
+    expect(mergeLots(rowsToHoldings(rows, today, id)).filter((x) => x.holding)).toHaveLength(2);
   });
 });

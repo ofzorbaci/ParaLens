@@ -24,7 +24,27 @@ const LINES = [
   '15/05/2026 THYAO 10 Adet %100 Temettü 0,00 100,00 0,00',
 ];
 
+// The newer layout: booking and value dates, the line type, then the trade; newest first.
+const NEW_LAYOUT = [
+  'Hesap Ekstresi',
+  '20/11/2026 20/11/2026 Nakit 20/11 Nema Stopaj (Brüt: 14,53) -2,54 9.686,34',
+  '19/10/2026 19/10/2026 Menkul KCHOL 25 Adet %186,2475 Temettü 9,31 9.785,08',
+  '19/09/2026 19/09/2026 Menkul 18/09 THYAO 5 Adetx255,50 Satış 1.277,50 9.850,05',
+  '18/09/2026 18/09/2026 Menkul 17/09 THYAO 15 Adetx252,50 Alış -3.787,50 9.860,29',
+  '14/09/2026 14/09/2026 Menkul 14/09 FROTO 20 xAlışOrt 82,134 AçSat Tl Kapat 1.642,68 14.220,18',
+  '01/09/2026 01/09/2026 Nakit Kredilendirme Sonu, Cari Kredi Aktarimi -1.276,78 8.571,38',
+];
+
 describe('broker statement PDF', () => {
+  it('reads the newer layout with value dates and line types', () => {
+    expect(isBrokerStatement(NEW_LAYOUT)).toBe(true);
+    const r = parseBrokerStatement(NEW_LAYOUT, today, id);
+    expect(r.filter((x) => x.holding).map((x) => x.holding)).toEqual([
+      expect.objectContaining({ name: 'THYAO', quantity: 10, unitCost: 252.5, buyDate: '2026-09-17' }),
+    ]);
+    expect(r.map((x) => x.note).join(' | ')).toMatch(/KCHOL: temettü gününde 25 adetin varmış/);
+  });
+
   it('recognises a statement with trades and nothing else', () => {
     expect(isBrokerStatement(LINES)).toBe(true);
     expect(isBrokerStatement(['Fatura', '01/01/2026 Market 100,00'])).toBe(false);

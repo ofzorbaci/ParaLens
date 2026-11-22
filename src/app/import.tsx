@@ -9,6 +9,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatDate, formatTL, todayISO } from '@/lib/format';
 import { isBrokerStatement, parseBrokerStatement } from '@/lib/broker-statement';
 import { pdfLines, PdfTimeout } from '@/lib/budget/statement-pdf';
+import { planImport } from '@/lib/import-plan';
 import { parseSpreadsheet, templateWorkbook, type ImportRow } from '@/lib/spreadsheet';
 import { pickSpreadsheet, shareWorkbook } from '@/lib/spreadsheet-file';
 import { KIND_LABELS } from '@/lib/types';
@@ -27,10 +28,16 @@ export default function ImportScreen() {
   const [progress, setProgress] = useState<string>();
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-  const valid = rows?.filter((r) => r.holding) ?? [];
-  const invalid = rows?.filter((r) => r.errors.length > 0) ?? [];
-  const notes = rows?.filter((r) => r.note && r.errors.length === 0 && !r.routine) ?? [];
-  const routine = rows?.filter((r) => r.routine).length ?? 0;
+  const allHoldings = useStore((s) => s.allHoldings);
+  const activePortfolio = useStore((s) => s.settings.activePortfolio);
+  // Lots already in this portfolio are left out, so two overlapping statements add each buy once.
+  const existing = allHoldings.filter((h) => !h.sample && h.portfolioId === activePortfolio);
+  const checked = rows ? planImport(rows, existing) : undefined;
+  const valid = checked?.rows.filter((r) => r.holding) ?? [];
+  const invalid = checked?.rows.filter((r) => r.errors.length > 0) ?? [];
+  const notes = checked?.rows.filter((r) => r.note && r.errors.length === 0 && !r.routine) ?? [];
+  const already = checked?.already ?? 0;
+  const routine = (checked?.rows.filter((r) => r.routine).length ?? 0) - already;
 
   const pick = async () => {
     setError(undefined);
@@ -104,9 +111,19 @@ export default function ImportScreen() {
         <Card>
           <ThemedText type="smallBold">3. Kontrol et</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {file} · {valid.length} varlık okundu{invalid.length ? `, ${invalid.length} satır okunamadı` : ''}. Onaylamadan
+            {file} · {valid.length} yeni varlık{invalid.length ? `, ${invalid.length} satır okunamadı` : ''}. Onaylamadan
             hiçbir kayıt yazılmaz.
           </ThemedText>
+          {(checked?.replace.length ?? 0) > 0 && (
+            <ThemedText type="small" themeColor="textSecondary">
+              Aynı hissenin uygulamadaki {checked!.replace.length} ayrı satırı, birleştirilmiş tek satırla değiştirilecek.
+            </ThemedText>
+          )}
+          {already > 0 && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {already} varlık zaten ekli (aynı hisse, tarih, adet ve fiyat); tekrar eklenmeyecek.
+            </ThemedText>
+          )}
           {valid.map((r) => {
             const h = r.holding!;
             const warn = plausibilityWarnings(h, { prices })[0];
@@ -129,7 +146,7 @@ export default function ImportScreen() {
           })}
           {routine > 0 && (
             <ThemedText type="small" themeColor="textSecondary">
-              {routine} satış ve kapanan alış eşleştirildi; elinde kalan adetler hesaplandı.
+              {routine} satır işlendi (satışlar alışlardan düşüldü, aynı hissenin alışları birleştirildi); elinde kalan adetler hesaplandı.
             </ThemedText>
           )}
           {notes.map((r) => (
@@ -151,7 +168,7 @@ export default function ImportScreen() {
             title={`${valid.length} varlığı ekle`}
             disabled={valid.length === 0}
             onPress={() => {
-              addHoldings(valid.map((r) => r.holding!));
+              addHoldings(checked!.add, checked!.replace);
               router.replace('/holdings');
             }}
           />

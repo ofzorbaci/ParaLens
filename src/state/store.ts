@@ -290,9 +290,10 @@ export function saveHolding(h: Holding) {
 }
 
 /** Adds several holdings at once (example portfolio, imports). */
-export function addHoldings(list: Holding[]) {
+/** Adds holdings to the portfolio on screen; `replace` ids are removed in the same step (import merges). */
+export function addHoldings(list: Holding[], replace: string[] = []) {
   const portfolioId = state.settings.activePortfolio;
-  setHoldings([...state.allHoldings, ...list.map((h) => ({ ...h, portfolioId }))]);
+  setHoldings([...state.allHoldings.filter((h) => !replace.includes(h.id)), ...list.map((h) => ({ ...h, portfolioId }))]);
 }
 
 /** Removes the example portfolio. */
