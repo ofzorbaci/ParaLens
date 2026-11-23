@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generatedAt": "2026-11-23T19:14:06.643Z",
+ "generatedAt": "2026-11-23T19:32:02.813Z",
  "cpi": {
   "rows": [
    {
@@ -3190,82 +3190,82 @@
  "usQuotes": {
   "stocks": {
    "AAPL": {
-    "price": 349.51,
+    "price": 350.21,
     "date": "2026-11-23",
     "name": "Apple"
    },
    "MSFT": {
-    "price": 496.3,
+    "price": 496.28,
     "date": "2026-11-23",
     "name": "Microsoft"
    },
    "NVDA": {
-    "price": 164.45,
+    "price": 165.32,
     "date": "2026-11-23",
     "name": "NVIDIA"
    },
    "AMZN": {
-    "price": 257.53,
+    "price": 257.2,
     "date": "2026-11-23",
     "name": "Amazon"
    },
    "GOOGL": {
-    "price": 282.99,
+    "price": 283.48,
     "date": "2026-11-23",
     "name": "Alphabet (Google) A"
    },
    "GOOG": {
-    "price": 280.73,
+    "price": 281.26,
     "date": "2026-11-23",
     "name": "Alphabet (Google) C"
    },
    "META": {
-    "price": 598.77,
+    "price": 599.12,
     "date": "2026-11-23",
     "name": "Meta"
    },
    "TSLA": {
-    "price": 387.33,
+    "price": 387.69,
     "date": "2026-11-23",
     "name": "Tesla"
    },
    "BRK.B": {
-    "price": 572.75,
+    "price": 572.77,
     "date": "2026-11-23",
     "name": "Berkshire Hathaway B"
    },
    "AVGO": {
-    "price": 311.24,
+    "price": 312.03,
     "date": "2026-11-23",
     "name": "Broadcom"
    },
    "LLY": {
-    "price": 1362.28,
+    "price": 1365.85,
     "date": "2026-11-23",
     "name": "Eli Lilly"
    },
    "JPM": {
-    "price": 318.4,
+    "price": 318.53,
     "date": "2026-11-23",
     "name": "JPMorgan Chase"
    },
    "V": {
-    "price": 410.85,
+    "price": 411.05,
     "date": "2026-11-23",
     "name": "Visa"
    },
    "MA": {
-    "price": 637.76,
+    "price": 638.6,
     "date": "2026-11-23",
     "name": "Mastercard"
    },
    "UNH": {
-    "price": 335.26,
+    "price": 335.48,
     "date": "2026-11-23",
     "name": "UnitedHealth"
    },
    "XOM": {
-    "price": 158.04,
+    "price": 157.79,
     "date": "2026-11-23",
     "name": "Exxon Mobil"
    },
@@ -3275,32 +3275,32 @@
     "name": "Walmart"
    },
    "JNJ": {
-    "price": 271.35,
+    "price": 271.83,
     "date": "2026-11-23",
     "name": "Johnson & Johnson"
    },
    "PG": {
-    "price": 170.25,
+    "price": 170.32,
     "date": "2026-11-23",
     "name": "Procter & Gamble"
    },
    "HD": {
-    "price": 346.39,
+    "price": 346.26,
     "date": "2026-11-23",
     "name": "Home Depot"
    },
    "COST": {
-    "price": 1100.05,
+    "price": 1100.35,
     "date": "2026-11-23",
     "name": "Costco"
    },
    "KO": {
-    "price": 96.23,
+    "price": 96.18,
     "date": "2026-11-23",
     "name": "Coca-Cola"
    },
    "PEP": {
-    "price": 140.42,
+    "price": 140.53,
     "date": "2026-11-23",
     "name": "PepsiCo"
    },
@@ -3310,313 +3310,313 @@
     "name": "McDonald's"
    },
    "NFLX": {
-    "price": 58.08,
+    "price": 58.14,
     "date": "2026-11-23",
     "name": "Netflix"
    },
    "AMD": {
-    "price": 452.38,
+    "price": 453.15,
     "date": "2026-11-23",
     "name": "AMD"
    },
    "INTC": {
-    "price": 58.31,
+    "price": 58.58,
     "date": "2026-11-23",
     "name": "Intel"
    },
    "ORCL": {
-    "price": 112.77,
+    "price": 113.22,
     "date": "2026-11-23",
     "name": "Oracle"
    },
    "CRM": {
-    "price": 184.9,
+    "price": 185.31,
     "date": "2026-11-23",
     "name": "Salesforce"
    },
    "ADBE": {
-    "price": 223.54,
+    "price": 224.23,
     "date": "2026-11-23",
     "name": "Adobe"
    },
    "CSCO": {
-    "price": 96.35,
+    "price": 96.58,
     "date": "2026-11-23",
     "name": "Cisco"
    },
    "QCOM": {
-    "price": 163.78,
+    "price": 164,
     "date": "2026-11-23",
     "name": "Qualcomm"
    },
    "TSM": {
-    "price": 365.91,
+    "price": 365.93,
     "date": "2026-11-23",
     "name": "TSMC"
    },
    "ASML": {
-    "price": 1380.44,
+    "price": 1384.79,
     "date": "2026-11-23",
     "name": "ASML"
    },
    "BABA": {
-    "price": 86.59,
+    "price": 86.72,
     "date": "2026-11-23",
     "name": "Alibaba"
    },
    "PLTR": {
-    "price": 157.67,
+    "price": 158.18,
     "date": "2026-11-23",
     "name": "Palantir"
    },
    "UBER": {
-    "price": 64.55,
+    "price": 64.6,
     "date": "2026-11-23",
     "name": "Uber"
    },
    "DIS": {
-    "price": 119.75,
+    "price": 119.88,
     "date": "2026-11-23",
     "name": "Disney"
    },
    "NKE": {
-    "price": 33.85,
+    "price": 33.89,
     "date": "2026-11-23",
     "name": "Nike"
    },
    "BA": {
-    "price": 162.42,
+    "price": 162.73,
     "date": "2026-11-23",
     "name": "Boeing"
    },
    "PFE": {
-    "price": 27.54,
+    "price": 27.56,
     "date": "2026-11-23",
     "name": "Pfizer"
    },
    "ABBV": {
-    "price": 288.76,
+    "price": 289.43,
     "date": "2026-11-23",
     "name": "AbbVie"
    },
    "MRK": {
-    "price": 135.8,
+    "price": 136.11,
     "date": "2026-11-23",
     "name": "Merck"
    },
    "CVX": {
-    "price": 207.1,
+    "price": 207.01,
     "date": "2026-11-23",
     "name": "Chevron"
    },
    "BAC": {
-    "price": 48.34,
+    "price": 48.43,
     "date": "2026-11-23",
     "name": "Bank of America"
    },
    "GS": {
-    "price": 826.05,
+    "price": 826.37,
     "date": "2026-11-23",
     "name": "Goldman Sachs"
    },
    "IBM": {
-    "price": 233.91,
+    "price": 234.36,
     "date": "2026-11-23",
     "name": "IBM"
    },
    "SBUX": {
-    "price": 106.13,
+    "price": 106.2,
     "date": "2026-11-23",
     "name": "Starbucks"
    },
    "PYPL": {
-    "price": 54.93,
+    "price": 55.16,
     "date": "2026-11-23",
     "name": "PayPal"
    },
    "COIN": {
-    "price": 108.36,
+    "price": 108.29,
     "date": "2026-11-23",
     "name": "Coinbase"
    },
    "MSTR": {
-    "price": 85.04,
+    "price": 84.96,
     "date": "2026-11-23",
     "name": "MicroStrategy"
    },
    "SHOP": {
-    "price": 133.95,
+    "price": 134.54,
     "date": "2026-11-23",
     "name": "Shopify"
    },
    "ARM": {
-    "price": 175.93,
+    "price": 176.39,
     "date": "2026-11-23",
     "name": "Arm Holdings"
    },
    "SMCI": {
-    "price": 24.62,
+    "price": 24.64,
     "date": "2026-11-23",
     "name": "Super Micro Computer"
    },
    "MU": {
-    "price": 708.12,
+    "price": 707.44,
     "date": "2026-11-23",
     "name": "Micron"
    },
    "SNOW": {
-    "price": 272.01,
+    "price": 272.52,
     "date": "2026-11-23",
     "name": "Snowflake"
    },
    "SPOT": {
-    "price": 583.03,
+    "price": 585.41,
     "date": "2026-11-23",
     "name": "Spotify"
    },
    "ABNB": {
-    "price": 174.46,
+    "price": 174.53,
     "date": "2026-11-23",
     "name": "Airbnb"
    },
    "RIVN": {
-    "price": 11.25,
+    "price": 11.26,
     "date": "2026-11-23",
     "name": "Rivian"
    },
    "F": {
-    "price": 11.64,
+    "price": 11.67,
     "date": "2026-11-23",
     "name": "Ford"
    },
    "SPY": {
-    "price": 722.61,
+    "price": 723.65,
     "date": "2026-11-23",
     "name": "SPDR S&P 500",
     "etf": true
    },
    "VOO": {
-    "price": 664.16,
+    "price": 665.19,
     "date": "2026-11-23",
     "name": "Vanguard S&P 500",
     "etf": true
    },
    "IVV": {
-    "price": 725.82,
+    "price": 726.86,
     "date": "2026-11-23",
     "name": "iShares Core S&P 500",
     "etf": true
    },
    "QQQ": {
-    "price": 650.45,
+    "price": 651.4,
     "date": "2026-11-23",
     "name": "Invesco QQQ (Nasdaq 100)",
     "etf": true
    },
    "VTI": {
-    "price": 355.46,
+    "price": 356.03,
     "date": "2026-11-23",
     "name": "Vanguard Total Stock Market",
     "etf": true
    },
    "VT": {
-    "price": 148.34,
+    "price": 148.57,
     "date": "2026-11-23",
     "name": "Vanguard Total World Stock",
     "etf": true
    },
    "VEA": {
-    "price": 65.71,
+    "price": 65.78,
     "date": "2026-11-23",
     "name": "Vanguard Developed Markets",
     "etf": true
    },
    "VWO": {
-    "price": 53.71,
+    "price": 53.78,
     "date": "2026-11-23",
     "name": "Vanguard Emerging Markets",
     "etf": true
    },
    "SCHD": {
-    "price": 34.39,
+    "price": 34.42,
     "date": "2026-11-23",
     "name": "Schwab US Dividend Equity",
     "etf": true
    },
    "VIG": {
-    "price": 240.95,
+    "price": 241.2,
     "date": "2026-11-23",
     "name": "Vanguard Dividend Appreciation",
     "etf": true
    },
    "DIA": {
-    "price": 496.16,
+    "price": 496.65,
     "date": "2026-11-23",
     "name": "SPDR Dow Jones",
     "etf": true
    },
    "IWM": {
-    "price": 265.44,
+    "price": 265.87,
     "date": "2026-11-23",
     "name": "iShares Russell 2000",
     "etf": true
    },
    "XLK": {
-    "price": 162.01,
+    "price": 162.38,
     "date": "2026-11-23",
     "name": "Technology Select Sector",
     "etf": true
    },
    "XLF": {
-    "price": 55.77,
+    "price": 55.81,
     "date": "2026-11-23",
     "name": "Financial Select Sector",
     "etf": true
    },
    "XLE": {
-    "price": 60.23,
+    "price": 60.2,
     "date": "2026-11-23",
     "name": "Energy Select Sector",
     "etf": true
    },
    "SMH": {
-    "price": 457.89,
+    "price": 458.66,
     "date": "2026-11-23",
     "name": "VanEck Semiconductor",
     "etf": true
    },
    "SOXX": {
-    "price": 139.23,
+    "price": 139.39,
     "date": "2026-11-23",
     "name": "iShares Semiconductor",
     "etf": true
    },
    "ARKK": {
-    "price": 69.42,
+    "price": 69.54,
     "date": "2026-11-23",
     "name": "ARK Innovation",
     "etf": true
    },
    "GLD": {
-    "price": 334.95,
+    "price": 334.53,
     "date": "2026-11-23",
     "name": "SPDR Gold Shares",
     "etf": true
    },
    "IAU": {
-    "price": 68.7,
+    "price": 68.61,
     "date": "2026-11-23",
     "name": "iShares Gold Trust",
     "etf": true
    },
    "SLV": {
-    "price": 39.15,
+    "price": 39.02,
     "date": "2026-11-23",
     "name": "iShares Silver Trust",
     "etf": true
    },
    "TLT": {
-    "price": 81.63,
+    "price": 81.61,
     "date": "2026-11-23",
     "name": "iShares 20+ Year Treasury",
     "etf": true
@@ -3628,7 +3628,7 @@
     "etf": true
    },
    "BND": {
-    "price": 71.39,
+    "price": 71.38,
     "date": "2026-11-23",
     "name": "Vanguard Total Bond Market",
     "etf": true
@@ -3640,31 +3640,31 @@
     "etf": true
    },
    "TUR": {
-    "price": 30.03,
+    "price": 30.02,
     "date": "2026-11-23",
     "name": "iShares MSCI Turkey",
     "etf": true
    },
    "IBIT": {
-    "price": 34.83,
+    "price": 34.75,
     "date": "2026-11-23",
     "name": "iShares Bitcoin Trust",
     "etf": true
    },
    "FBTC": {
-    "price": 53.51,
+    "price": 53.39,
     "date": "2026-11-23",
     "name": "Fidelity Wise Origin Bitcoin",
     "etf": true
    },
    "VNQ": {
-    "price": 93.61,
+    "price": 93.68,
     "date": "2026-11-23",
     "name": "Vanguard Real Estate",
     "etf": true
    },
    "JEPI": {
-    "price": 55.99,
+    "price": 56.01,
     "date": "2026-11-23",
     "name": "JPMorgan Equity Premium Income",
     "etf": true
@@ -3672,12 +3672,12 @@
   },
   "crypto": {
    "BTC": {
-    "price": 61588.35,
+    "price": 61463.81,
     "date": "2026-11-23",
     "name": "Bitcoin"
    },
    "ETH": {
-    "price": 1743.07,
+    "price": 1737.94,
     "date": "2026-11-23",
     "name": "Ethereum"
    },
@@ -3692,47 +3692,47 @@
     "name": "USD Coin"
    },
    "BNB": {
-    "price": 561.06,
+    "price": 559.91,
     "date": "2026-11-23",
     "name": "BNB"
    },
    "SOL": {
-    "price": 73.38,
+    "price": 73.09,
     "date": "2026-11-23",
     "name": "Solana"
    },
    "XRP": {
-    "price": 0.9513,
+    "price": 0.9482,
     "date": "2026-11-23",
     "name": "XRP"
    },
    "DOGE": {
-    "price": 0.05722,
+    "price": 0.05699,
     "date": "2026-11-23",
     "name": "Dogecoin"
    },
    "ADA": {
-    "price": 0.1501,
+    "price": 0.1491,
     "date": "2026-11-23",
     "name": "Cardano"
    },
    "TRX": {
-    "price": 0.3106,
+    "price": 0.3102,
     "date": "2026-11-23",
     "name": "TRON"
    },
    "AVAX": {
-    "price": 6.878,
+    "price": 6.854,
     "date": "2026-11-23",
     "name": "Avalanche"
    },
    "LINK": {
-    "price": 9.068,
+    "price": 9.028,
     "date": "2026-11-23",
     "name": "Chainlink"
    },
    "DOT": {
-    "price": 0.688,
+    "price": 0.684,
     "date": "2026-11-23",
     "name": "Polkadot"
    },
@@ -3742,47 +3742,47 @@
     "name": "Toncoin"
    },
    "LTC": {
-    "price": 41.91,
+    "price": 41.65,
     "date": "2026-11-23",
     "name": "Litecoin"
    },
    "SHIB": {
-    "price": 0.00000367,
+    "price": 0.00000365,
     "date": "2026-11-23",
     "name": "Shiba Inu"
    },
    "BCH": {
-    "price": 202.2,
+    "price": 202,
     "date": "2026-11-23",
     "name": "Bitcoin Cash"
    },
    "ATOM": {
-    "price": 1.252,
+    "price": 1.253,
     "date": "2026-11-23",
     "name": "Cosmos"
    },
    "NEAR": {
-    "price": 3.081,
+    "price": 3.047,
     "date": "2026-11-23",
     "name": "NEAR"
    },
    "XLM": {
-    "price": 0.1314,
+    "price": 0.1308,
     "date": "2026-11-23",
     "name": "Stellar"
    },
    "APT": {
-    "price": 0.3891,
+    "price": 0.3866,
     "date": "2026-11-23",
     "name": "Aptos"
    },
    "ARB": {
-    "price": 0.1135,
+    "price": 0.1129,
     "date": "2026-11-23",
     "name": "Arbitrum"
    },
    "PEPE": {
-    "price": 0.00000351,
+    "price": 0.00000348,
     "date": "2026-11-23",
     "name": "Pepe"
    }
