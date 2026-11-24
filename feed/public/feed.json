@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generatedAt": "2026-11-24T21:13:38.234Z",
+ "generatedAt": "2026-11-24T21:35:01.523Z",
  "cpi": {
   "rows": [
    {
@@ -3425,7 +3425,7 @@
     "name": "IBM"
    },
    "SBUX": {
-    "price": 106.365,
+    "price": 106.38,
     "date": "2026-11-24",
     "name": "Starbucks"
    },
@@ -3460,7 +3460,7 @@
     "name": "Super Micro Computer"
    },
    "MU": {
-    "price": 630.07293,
+    "price": 629.79,
     "date": "2026-11-24",
     "name": "Micron"
    },
@@ -3616,7 +3616,7 @@
     "etf": true
    },
    "TLT": {
-    "price": 81.47,
+    "price": 81.49,
     "date": "2026-11-24",
     "name": "iShares 20+ Year Treasury",
     "etf": true
@@ -3672,12 +3672,12 @@
   },
   "crypto": {
    "BTC": {
-    "price": 59746.89,
+    "price": 59955.98,
     "date": "2026-11-24",
     "name": "Bitcoin"
    },
    "ETH": {
-    "price": 1674.37,
+    "price": 1681.64,
     "date": "2026-11-24",
     "name": "Ethereum"
    },
@@ -3692,42 +3692,42 @@
     "name": "USD Coin"
    },
    "BNB": {
-    "price": 548.83,
+    "price": 550.06,
     "date": "2026-11-24",
     "name": "BNB"
    },
    "SOL": {
-    "price": 69.25,
+    "price": 69.55,
     "date": "2026-11-24",
     "name": "Solana"
    },
    "XRP": {
-    "price": 0.9205,
+    "price": 0.9222,
     "date": "2026-11-24",
     "name": "XRP"
    },
    "DOGE": {
-    "price": 0.05522,
+    "price": 0.05532,
     "date": "2026-11-24",
     "name": "Dogecoin"
    },
    "ADA": {
-    "price": 0.1439,
+    "price": 0.1445,
     "date": "2026-11-24",
     "name": "Cardano"
    },
    "TRX": {
-    "price": 0.3084,
+    "price": 0.3085,
     "date": "2026-11-24",
     "name": "TRON"
    },
    "AVAX": {
-    "price": 6.557,
+    "price": 6.58,
     "date": "2026-11-24",
     "name": "Avalanche"
    },
    "LINK": {
-    "price": 8.809,
+    "price": 8.829,
     "date": "2026-11-24",
     "name": "Chainlink"
    },
@@ -3742,52 +3742,52 @@
     "name": "Toncoin"
    },
    "LTC": {
-    "price": 40.68,
+    "price": 40.77,
     "date": "2026-11-24",
     "name": "Litecoin"
    },
    "SHIB": {
-    "price": 0.00000355,
+    "price": 0.00000354,
     "date": "2026-11-24",
     "name": "Shiba Inu"
    },
    "BCH": {
-    "price": 195.5,
+    "price": 196,
     "date": "2026-11-24",
     "name": "Bitcoin Cash"
    },
    "ATOM": {
-    "price": 1.254,
+    "price": 1.257,
     "date": "2026-11-24",
     "name": "Cosmos"
    },
    "NEAR": {
-    "price": 2.856,
+    "price": 2.865,
     "date": "2026-11-24",
     "name": "NEAR"
    },
    "XLM": {
-    "price": 0.1239,
+    "price": 0.1244,
     "date": "2026-11-24",
     "name": "Stellar"
    },
    "APT": {
-    "price": 0.3673,
+    "price": 0.3674,
     "date": "2026-11-24",
     "name": "Aptos"
    },
    "ARB": {
-    "price": 0.1105,
+    "price": 0.1107,
     "date": "2026-11-24",
     "name": "Arbitrum"
    },
    "PEPE": {
-    "price": 0.00000347,
+    "price": 0.00000348,
     "date": "2026-11-24",
     "name": "Pepe"
    }
   },
-  "source": "Finnhub"
+  "source": "Finnhub, Alpha Vantage"
  },
  "holidays": {
   "dates": [
