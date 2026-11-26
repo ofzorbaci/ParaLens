@@ -82,6 +82,17 @@ describe('other brokers’ usual wording', () => {
     ]);
   });
 
+  it('lists a trade line it could not read instead of dropping it', () => {
+    const r = parseBrokerStatement(
+      ['05.02.2026 THYAO 20 Adet x 300,00 ALIŞ -6.000,00 1.000,00', '06.02.2026 Hisse Alış THYAO Miktar:10 Fiyat:310 -3.100,00'],
+      today,
+      id,
+    );
+    expect(r.filter((x) => x.holding)).toHaveLength(1);
+    expect(r.flatMap((x) => x.errors)).toEqual([expect.stringMatching(/^Bu satırı anlayamadım, eklenmedi: “06\.02\.2026 Hisse Alış THYAO/)]);
+    expect(isBrokerStatement(['06.02.2026 Hisse Alış THYAO Miktar:10 Fiyat:310'])).toBe(true);
+  });
+
   it('ignores fee, interest and short-close lines', () => {
     expect(
       isBrokerStatement([

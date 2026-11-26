@@ -60,3 +60,8 @@ export function knownSymbols(kind: Holding['kind'], us: Feed['usQuotes'] = usBoo
     .filter(([, q]) => kind === 'crypto' || (kind === 'etf') === !!q.etf)
     .map(([symbol, q]) => ({ symbol, name: q.name ?? symbol }));
 }
+
+/** The TEFAS entry for a fund code (name, price, returns), when the fund book has it. */
+export function fundInfo(code: string): FundBook['funds'][string] | undefined {
+  return fundBook?.funds[code.toLocaleUpperCase('tr-TR')];
+}

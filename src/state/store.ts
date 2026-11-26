@@ -32,6 +32,7 @@ import { requestReview } from '@/lib/store-review';
 import { refreshPriceBook, toLivePrices, type PriceBook } from '@/lib/prices';
 import { buy, initPurchases, restore, type Plan } from '@/lib/purchases';
 import { analyzeHolding, analyzePortfolio } from '@/lib/returns';
+import { premiumOpen } from '@/lib/taste';
 import type { Holding, LivePrices, Settings } from '@/lib/types';
 
 type State = {
@@ -112,7 +113,7 @@ function set(patch: Partial<State>) {
   if (patch.storePremium || patch.devPremium !== undefined) {
     next.premium = __DEV__ && next.devPremium ? { ...NO_PREMIUM, active: true, source: 'dev' } : next.storePremium;
   }
-  next.calcSettings = next.premium.active ? next.settings : { ...next.settings, inflationSource: 'tuik' };
+  next.calcSettings = premiumOpen(next.premium.active, next.meta.firstOpenAt) ? next.settings : { ...next.settings, inflationSource: 'tuik' };
   setAmountsMasked(next.settings.hideAmounts ?? false);
   if (patch.allHoldings || patch.settings) {
     const id = next.settings.activePortfolio;
@@ -320,7 +321,7 @@ function applyStorePremium(status: PremiumStatus) {
   if (status.trial && status.willRenew && status.expiresAt) void scheduleTrialEndReminder(status.expiresAt);
   else void cancelTrialEndReminder();
   // Rate-decision reminders are Premium; stop them when the subscription ends.
-  if (!state.premium.active && state.settings.notifyRate) void setReminders('rate', false);
+  if (!premiumOpen(state.premium.active, state.meta.firstOpenAt) && state.settings.notifyRate) void setReminders('rate', false);
 }
 
 /** Opens the store purchase sheet; false if the user cancelled. Throws on store errors. */
@@ -343,7 +344,7 @@ export function setDevPremium(on: boolean) {
   if (!__DEV__) return;
   set({ devPremium: on });
   persist(KEYS.devPremium, on);
-  if (!state.premium.active && state.settings.notifyRate) void setReminders('rate', false);
+  if (!premiumOpen(state.premium.active, state.meta.firstOpenAt) && state.settings.notifyRate) void setReminders('rate', false);
 }
 
 /** Re-schedules the reminders that are on, so they follow the current calendars and deposits. */
@@ -387,7 +388,7 @@ export async function setMaturityReminders(on: boolean): Promise<boolean> {
  * "ParaLens showed you ₺X this year" counter.
  */
 export function recordRenewView(id: string, maturity: string, diff: number) {
-  if (!state.premium.active || !(diff > 0) || state.allHoldings.find((h) => h.id === id)?.sample) return;
+  if (!premiumOpen(state.premium.active, state.meta.firstOpenAt) || !(diff > 0) || state.allHoldings.find((h) => h.id === id)?.sample) return;
   const log = state.settings.renewLog ?? [];
   if (log.some((e) => e.id === id && e.maturity === maturity)) return;
   updateSettings({ renewLog: [...log, { id, maturity, diff }].slice(-60) });
@@ -455,7 +456,7 @@ export async function deleteAllData(): Promise<void> {
 async function runAlertCheck(): Promise<void> {
   const { settings, calcSettings, premium, prices, cpi } = state;
   const enabled = { realBelowZero: !!settings.alertRealBelowZero, goal: !!settings.goal };
-  if (!state.ready || !premium.active || (!enabled.realBelowZero && !enabled.goal)) return;
+  if (!state.ready || !premiumOpen(premium.active, state.meta.firstOpenAt) || (!enabled.realBelowZero && !enabled.goal)) return;
   const today = todayISO();
   const own = state.allHoldings.filter((h) => !h.sample);
   const total = analyzePortfolio(own.map((h) => analyzeHolding(h, today, prices, calcSettings, cpi.index)));

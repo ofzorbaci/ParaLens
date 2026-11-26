@@ -4,7 +4,7 @@ import feed from '../../data/feed-snapshot.json';
 import { buildCpiIndex } from '../cpi';
 import type { Feed } from '../feed-types';
 import type { RenewResult } from '../renew';
-import { averageRateFor, compoundToSimple, forwardReal, lastTermReal, liraOutcomes, liraSpread, rankOffers, renewRanking } from '../renew-forward';
+import { averageRateFor, compoundToSimple, forwardReal, lastTermReal, liraOutcomes, liraSpread, priceMultiple, rankOffers, renewRanking } from '../renew-forward';
 import type { Holding, Settings } from '../types';
 import { usdReal } from '../usd-real';
 
@@ -129,5 +129,13 @@ describe('rankOffers', () => {
 
   it('returns nothing without a usable rate', () => {
     expect(rankOffers([{ bank: '', rate: Number.NaN }], 32, undefined, 25, 1000)).toEqual([]);
+  });
+});
+
+describe('priceMultiple', () => {
+  it('counts whole yearly fees in the gain', () => {
+    expect(priceMultiple(4_200, 400)).toBe(10);
+    expect(priceMultiple(399, 400)).toBe(0);
+    expect(priceMultiple(1_000, 0)).toBe(0);
   });
 });

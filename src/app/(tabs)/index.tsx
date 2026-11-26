@@ -6,6 +6,7 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { NetWorthCard } from '@/components/budget/net-worth-card';
 import { HeroCard } from '@/components/hero';
 import { MAIN_PORTFOLIO, NO_PORTFOLIOS } from '@/components/portfolios-card';
+import { MoneyMarketCard } from '@/components/money-market-card';
 import { QuickStart } from '@/components/quick-start';
 import { openPaywall, PremiumGate, usePremium } from '@/components/premium-gate';
 import { SourcesFooter } from '@/components/source-line';
@@ -150,6 +151,8 @@ Faiz kararı: ${RELEASE_FMT.format(nextRate)}, 14:00.` : ''),
           stale={staleHoldings(items.map((i) => i.holding), new Date()).length}
         />
       )}
+
+      {total && <MoneyMarketCard />}
 
       {total && (
         <PremiumGate feature="netWorth" pitch="Tüm birikimin ve bütçe hesapların tek rakamda: bugünün lirasıyla ve dolarla net varlığın.">

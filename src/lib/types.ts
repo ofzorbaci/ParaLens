@@ -88,7 +88,8 @@ export type Settings = {
   /** lira differences shown at maturities, for the "ParaLens showed you ₺X" counter */
   renewLog?: RenewLogEntry[];
   /** the one maturity a free user saw in full ("Yenilesem mi?" lira amounts, every window) */
-  freeRenew?: { id: string; maturity: string };
+  /** Bank offers typed on the maturity screen, kept so the next maturity starts filled in. */
+  bankOffers?: { bank: string; rate: number; date: string }[];
   /** Premium: notify when the portfolio's real return turns negative */
   alertRealBelowZero?: boolean;
   /** Premium: a target in the purchasing power of the day it was set */

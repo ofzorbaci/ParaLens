@@ -2,19 +2,18 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 
-import { openPaywall, PremiumGate, usePremium } from '@/components/premium-gate';
+import { openPaywall, PremiumGate, usePremium, useTasteDaysLeft } from '@/components/premium-gate';
 import { ThemedText } from '@/components/themed-text';
 import { RenewForwardCard, signedTL } from '@/components/renew-forward-card';
 import { Button, Card, Choice, Disclaimer, IconButton, Pct, Screen } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useMasked } from '@/hooks/use-masked';
 import { useTheme } from '@/hooks/use-theme';
-import { isTlDeposit } from '@/lib/deposit';
 import { formatLongDate, formatPct, todayISO } from '@/lib/format';
 import { nextMaturity, RENEW_WINDOWS, renewComparison, type RenewWindow } from '@/lib/renew';
 import { liraOutcomes, liraSpread, renewRanking } from '@/lib/renew-forward';
 import { payout } from '@/lib/business-day';
-import { recordRenewView, setMaturityReminders, updateSettings, useStore } from '@/state/store';
+import { recordRenewView, setMaturityReminders, useStore } from '@/state/store';
 
 const WINDOW_LABEL: Record<RenewWindow, string> = { 1: 'Son 1 ay', 3: 'Son 3 ay', 12: 'Son 12 ay' };
 
@@ -28,19 +27,12 @@ export default function RenewScreen() {
   const index = useStore((s) => s.cpi.index);
   const prices = useStore((s) => s.prices);
   const markets = useStore((s) => s.feed.markets);
-  const subscribed = usePremium();
-  const freeRenew = useStore((s) => s.settings.freeRenew);
+  // Premium, or the first 30 days (one rule for every free window).
+  const premium = usePremium();
+  const tasteLeft = useTasteDaysLeft();
   const [chosen, setChosen] = useState<string>('12');
   const today = todayISO();
   const maturityDate = h ? nextMaturity(h, today) : undefined;
-  // The first maturity a free user opens is shown in full, once; later ones are Premium.
-  // Only a real TL deposit with a maturity uses it: not the example portfolio, not an FX deposit.
-  const giftable = !!h && isTlDeposit(h) && !h.sample && !!maturityDate;
-  const gift = !subscribed && giftable && (!freeRenew || (freeRenew.id === h?.id && freeRenew.maturity === maturityDate));
-  const premium = subscribed || gift;
-  useEffect(() => {
-    if (gift && !freeRenew && h && maturityDate) updateSettings({ freeRenew: { id: h.id, maturity: maturityDate } });
-  }, [gift, freeRenew, h, maturityDate]);
   // Free users see the last month's ranking; the lira amounts and longer windows are Premium.
   const window = (premium ? Number(chosen) : 1) as RenewWindow;
   const result = h ? renewComparison(h, window, today, prices, markets, settings, index) : undefined;
@@ -92,13 +84,13 @@ export default function RenewScreen() {
         onChange={(v) => (premium ? setChosen(v) : v !== '1' && openPaywall('renewUnlimited'))}
       />
 
-      {gift && (
+      {tasteLeft > 0 && (
         <View style={[styles.locked, { backgroundColor: theme.info }]}>
           <ThemedText type="smallBold" style={{ color: theme.infoText }}>
-            İlk vaden bizden: lira farkını ücretsiz görüyorsun
+            İlk 30 gün her şey açık: {tasteLeft} gün kaldı
           </ThemedText>
           <ThemedText type="small" style={{ color: theme.infoText }}>
-            Bu vadede banka karşılaştırması ve lira farkı açık. Sonraki vadelerde Premium’la.
+            Banka karşılaştırması, lira farkı ve 12 aylık hesap şimdi açık; sonrasında ParaLens Premium’la.
           </ThemedText>
         </View>
       )}
@@ -151,13 +143,9 @@ export default function RenewScreen() {
         </Card>
       )}
 
-      {gift ? (
+      <PremiumGate feature="renewForward" pitch="Bankaların teklif ettiği faizleri yan yana yaz; hangisinin 12 ayda bugünün lirasıyla kaç lira fazla kazandıracağını gör.">
         <RenewForwardCard h={h} />
-      ) : (
-        <PremiumGate feature="renewForward" pitch="Bankaların teklif ettiği faizleri yan yana yaz; hangisinin 12 ayda bugünün lirasıyla kaç lira fazla kazandıracağını gör. İlk vaden ücretsizdi; sonraki vadeler Premium’la.">
-          <RenewForwardCard h={h} />
-        </PremiumGate>
-      )}
+      </PremiumGate>
 
       {Platform.OS !== 'web' && (
         <Card>

@@ -7,25 +7,24 @@ import { Button, Card, Icon } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { PREMIUM_FEATURES, type PremiumFeature } from '@/lib/entitlements';
-import { tasteDaysLeft, tasteUnlocks } from '@/lib/taste';
+import { premiumOpen, tasteDaysLeft } from '@/lib/taste';
 import { useStore } from '@/state/store';
 
+/** Premium features are open: a subscription, or the first 30 days. The paywall reads s.premium itself. */
 export function usePremium(): boolean {
-  return useStore((s) => s.premium.active);
+  return useStore((s) => premiumOpen(s.premium.active, s.meta.firstOpenAt));
 }
 
-/** Premium, or one of the personal-inflation features during the 14-day free taste. */
-export function useUnlocked(feature: PremiumFeature): boolean {
-  const premium = usePremium();
-  const firstOpenAt = useStore((s) => s.meta.firstOpenAt);
-  return premium || tasteUnlocks(feature, firstOpenAt, new Date());
+/** Kept as the per-feature entry point; every feature follows the one rule of usePremium. */
+export function useUnlocked(_feature: PremiumFeature): boolean {
+  return usePremium();
 }
 
-/** Days left of the free taste; 0 for subscribers and once it is over. */
+/** Days left of the free first month; 0 for subscribers and once it is over. */
 export function useTasteDaysLeft(): number {
-  const premium = usePremium();
+  const subscribed = useStore((s) => s.premium.active);
   const firstOpenAt = useStore((s) => s.meta.firstOpenAt);
-  return premium ? 0 : tasteDaysLeft(firstOpenAt, new Date());
+  return subscribed ? 0 : tasteDaysLeft(firstOpenAt, new Date());
 }
 
 export function openPaywall(feature?: PremiumFeature) {

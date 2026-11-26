@@ -2,7 +2,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
-import { openPaywall } from '@/components/premium-gate';
+import { openPaywall, useTasteDaysLeft } from '@/components/premium-gate';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Card } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
@@ -19,8 +19,11 @@ export function PremiumCard() {
   const [status, setStatus] = useState<string>();
   const until = premium.expiresAt ? formatLongDate(premium.expiresAt.slice(0, 10)) : undefined;
 
+  const tasteLeft = useTasteDaysLeft();
   const line = !premium.active
-    ? 'Ücretsiz sürüm · tüm varlıkların, reel skorun ve ENAG özeti ücretsiz'
+    ? tasteLeft > 0
+      ? `İlk 30 gün her şey açık · ${tasteLeft} gün kaldı, sonra ParaLens Premium`
+      : 'Ücretsiz sürüm · tüm varlıkların, reel skorun ve ENAG özeti ücretsiz'
     : premium.source === 'dev'
       ? 'Premium (geliştirici modu)'
       : premium.lifetime
@@ -47,7 +50,7 @@ export function PremiumCard() {
         {line}
       </ThemedText>
       {!premium.active && (
-        <Button title="Premium’u 7 gün ücretsiz dene" onPress={() => openPaywall()} />
+        <Button title="Premium’u keşfet" onPress={() => openPaywall()} />
       )}
       {premium.active && premium.source === 'store' && !premium.lifetime && (
         <Button

@@ -82,3 +82,8 @@ export function rankOffers(offers: BankOffer[], termDays: number, withholding: n
   const best = ranked[0]?.lira ?? 0;
   return ranked.map((o) => ({ ...o, vsBest: best - o.lira }));
 }
+
+/** "The yearly fee N times over": whole times, 0 when the price is unknown or the gain smaller. */
+export function priceMultiple(gain: number, yearlyPrice: number): number {
+  return yearlyPrice > 0 && gain > 0 ? Math.floor(gain / yearlyPrice) : 0;
+}

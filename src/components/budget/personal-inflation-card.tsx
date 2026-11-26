@@ -61,7 +61,7 @@ export function PersonalInflationCard() {
       <ThemedText style={styles.title}>Senin enflasyonun</ThemedText>
       {tasteLeft > 0 && (
         <ThemedText type="small" style={{ color: theme.accent }}>
-          Ücretsiz tadımlık: kalem kalem döküm {tasteLeft} gün daha açık.
+          İlk 30 gün her şey açık: {tasteLeft} gün kaldı.
         </ThemedText>
       )}
       <View style={styles.line}>

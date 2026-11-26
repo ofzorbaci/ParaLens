@@ -1,32 +1,18 @@
-// The free taste: for the first 14 days after the app is first opened, the personal-inflation
-// features work in full without a subscription or a store trial, no card needed.
+// One free rule: "İlk 30 gün her şey açık, sonra ParaLens Premium." For the first 30 days after
+// the app is first opened every Premium feature works, no card or store trial needed. It replaces
+// the 14-day personal-inflation taste, the free first maturity and the free first month of the
+// dollar-based return, which were three rules for one idea.
 
-import type { PremiumFeature } from './entitlements';
+export const TASTE_DAYS = 30;
 
-export const TASTE_DAYS = 14;
-
-export const TASTE_FEATURES: PremiumFeature[] = ['personalInflation', 'personalBasket', 'netWorth'];
-
-/** Whole days of the taste left on `now`; 0 once it is over or before the first open is known. */
+/** Whole days of the free month left on `now`; 0 once it is over or before the first open is known. */
 export function tasteDaysLeft(firstOpenAt: string | undefined, now: Date): number {
   if (!firstOpenAt) return 0;
   const end = Date.parse(firstOpenAt) + TASTE_DAYS * 86_400_000;
   return Math.max(0, Math.ceil((end - now.getTime()) / 86_400_000));
 }
 
-/**
- * Shown free for the first month: dollar and gold holders see their real return in dollars,
- * the one answer that group asks for ("is my dollar melting in dollars too?").
- */
-export const FIRST_MONTH_DAYS = 30;
-export const FIRST_MONTH_FEATURES: PremiumFeature[] = ['usdReal'];
-
-export function inFirstMonth(firstOpenAt: string | undefined, now: Date): boolean {
-  if (!firstOpenAt) return false;
-  return now.getTime() < Date.parse(firstOpenAt) + FIRST_MONTH_DAYS * 86_400_000;
-}
-
-export function tasteUnlocks(feature: PremiumFeature, firstOpenAt: string | undefined, now: Date): boolean {
-  if (FIRST_MONTH_FEATURES.includes(feature)) return inFirstMonth(firstOpenAt, now);
-  return TASTE_FEATURES.includes(feature) && tasteDaysLeft(firstOpenAt, now) > 0;
+/** Premium features are open: a subscription, or the first 30 days. */
+export function premiumOpen(subscribed: boolean, firstOpenAt: string | undefined, now: Date = new Date()): boolean {
+  return subscribed || tasteDaysLeft(firstOpenAt, now) > 0;
 }

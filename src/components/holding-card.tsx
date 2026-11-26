@@ -1,7 +1,7 @@
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { openPaywall, usePremium, useUnlocked } from '@/components/premium-gate';
+import { openPaywall, useUnlocked } from '@/components/premium-gate';
 import { HoldingSource } from '@/components/source-line';
 import { ThemedText } from '@/components/themed-text';
 import { Card, Pct, StatStrip } from '@/components/ui';
@@ -55,11 +55,9 @@ export function HoldingCard({ holding: h, analysis: a }: { holding: Holding; ana
   const maturity = nextMaturity(h, todayISO());
   // Funds and stocks the feed prices need no hand-entered price, so no age warning either.
   const age = h.kind !== 'deposit' && !isLivePriced(h.kind) && !feedQuote(h) ? priceAgeDays(h, new Date()) : undefined;
-  const premium = usePremium();
   const prices = useStore((s) => s.prices);
   const feed = useStore((s) => s.feed);
   const dollarBased = h.kind === 'usd' || h.kind === 'eur' || h.kind === 'gbp' || h.kind === 'gold' || isUsdPriced(h.kind);
-  // Free during the first month, then Premium.
   const usdOpen = useUnlocked('usdReal');
   const usd = dollarBased && usdOpen ? usdReal(h, a, prices, feed) : undefined;
   const stats =
@@ -113,7 +111,7 @@ export function HoldingCard({ holding: h, analysis: a }: { holding: Holding; ana
               usd !== undefined && (
                 <View style={styles.usdRow}>
                   <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
-                    Dolar bazında reel (ABD enflasyonuyla){premium ? '' : ' · ilk ay ücretsiz'}
+                    Dolar bazında reel (ABD enflasyonuyla)
                   </ThemedText>
                   <Pct ratio={usd} size={15} />
                 </View>

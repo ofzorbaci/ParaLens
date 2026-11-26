@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { basketRate, defaultBasket } from '../basket';
 import { canAddHolding, isLaunched, NO_PREMIUM, OFFERED_FEATURES, premiumShowcase, yearlySavings } from '../entitlements';
-import { tasteUnlocks } from '../taste';
+import { premiumOpen, tasteDaysLeft } from '../taste';
 import { shouldAskForReview } from '../review';
 import { freeTrialDays, planPeriod, statusFromCustomerInfo } from '../subscription-map';
 
@@ -171,18 +171,20 @@ describe('lifetime plan', () => {
   });
 });
 
-describe('free taste', () => {
-  it('opens the personal-inflation features for the first 14 days only', async () => {
-    const { tasteDaysLeft } = await import('../taste');
-    const first = '2026-11-01T10:00:00Z';
-    expect(tasteDaysLeft(first, new Date('2026-11-01T10:00:00Z'))).toBe(14);
-    expect(tasteDaysLeft(first, new Date('2026-11-14T11:00:00Z'))).toBe(1);
-    expect(tasteDaysLeft(first, new Date('2026-11-15T11:00:00Z'))).toBe(0);
-    expect(tasteDaysLeft(undefined, new Date())).toBe(0);
-    expect(tasteUnlocks('personalInflation', first, new Date('2026-11-05'))).toBe(true);
-    expect(tasteUnlocks('netWorth', first, new Date('2026-11-05'))).toBe(true);
-    // Everything else stays Premium during the taste.
-    expect(tasteUnlocks('benchmarks', first, new Date('2026-11-05'))).toBe(false);
+describe('one free rule: the first 30 days', () => {
+  const first = '2026-11-01T10:00:00Z';
+  it('counts the days left of the first month', () => {
+    expect(tasteDaysLeft(first, new Date('2026-11-01T10:00:00Z'))).toBe(30);
+    expect(tasteDaysLeft(first, new Date('2026-11-30T11:00:00Z'))).toBe(1);
+    expect(tasteDaysLeft(first, new Date('2026-12-01T11:00:00Z'))).toBe(0);
+    expect(tasteDaysLeft(undefined, new Date('2026-11-02'))).toBe(0);
+  });
+
+  it('opens every Premium feature for 30 days, then only for subscribers', () => {
+    expect(premiumOpen(false, first, new Date('2026-11-20'))).toBe(true);
+    expect(premiumOpen(false, first, new Date('2026-12-02'))).toBe(false);
+    expect(premiumOpen(true, first, new Date('2027-06-01'))).toBe(true);
+    expect(premiumOpen(false, undefined, new Date('2026-11-02'))).toBe(false);
   });
 });
 
@@ -195,14 +197,5 @@ describe('launch scope', () => {
     }
     expect(offered).toContain('renewForward');
     expect(offered).toContain('personalInflation');
-  });
-});
-
-describe('dollar-based real return in the first month', () => {
-  const opened = '2026-11-01T09:00:00.000Z';
-  it('is free for the first 30 days, then Premium', () => {
-    expect(tasteUnlocks('usdReal', opened, new Date('2026-11-29T09:00:00Z'))).toBe(true);
-    expect(tasteUnlocks('usdReal', opened, new Date('2026-12-02T09:00:00Z'))).toBe(false);
-    expect(tasteUnlocks('usdReal', undefined, new Date('2026-11-02T09:00:00Z'))).toBe(false);
   });
 });

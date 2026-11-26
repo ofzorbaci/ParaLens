@@ -40,9 +40,15 @@ function tradeDate(bookDay: string, bookMonth: string, bookYear: string, day?: s
   return `${year}-${month}-${day}`;
 }
 
-function read(lines: string[]): { trades: Trade[]; dividends: Dividend[] } {
+// A dated line that names a buy or a sell but matched neither pattern: shown to the user as
+// "anlayamadım" instead of being dropped silently. Short-sale closes and fee lines are not trades.
+const LOOKS_LIKE_TRADE = new RegExp(String.raw`^${DATE}.*\s${SIDE}(?=\s|$)`);
+const NOT_A_TRADE = /AçSat|AlışOrt|Açığa|Temettü|Komisyon|Borsa|Takas|Sms|Nema|Vergi|Kredi|Teminat|VIOP|Viop/i;
+
+function read(lines: string[]): { trades: Trade[]; dividends: Dividend[]; unread: string[] } {
   const trades: Trade[] = [];
   const dividends: Dividend[] = [];
+  const unread: string[] = [];
   for (const raw of lines) {
     const line = raw.replace(/\s+/g, ' ').trim();
     const a = TRADE_AFTER.exec(line);
@@ -58,13 +64,15 @@ function read(lines: string[]): { trades: Trade[]; dividends: Dividend[] } {
     const d = DIVIDEND.exec(line);
     const quantity = d ? parseAmount(d[7]) : undefined;
     if (d && quantity) dividends.push({ date: `${d[3]}-${d[2]}-${d[1]}`, name: d[6], quantity });
+    else if (LOOKS_LIKE_TRADE.test(line) && !NOT_A_TRADE.test(line)) unread.push(line);
   }
-  return { trades, dividends };
+  return { trades, dividends, unread };
 }
 
-/** True when the PDF looks like a broker statement with at least one stock trade. */
+/** True when the PDF has at least one trade line, read or not (unread ones are listed to the user). */
 export function isBrokerStatement(lines: string[]): boolean {
-  return read(lines).trades.length > 0;
+  const { trades, unread } = read(lines);
+  return trades.length > 0 || unread.length > 0;
 }
 
 /**
@@ -73,7 +81,7 @@ export function isBrokerStatement(lines: string[]): boolean {
  * them with their own cost instead of being guessed.
  */
 export function parseBrokerStatement(lines: string[], today: string, id: () => string): ImportRow[] {
-  const { trades, dividends } = read(lines);
+  const { trades, dividends, unread } = read(lines);
   const rows: unknown[][] = [['Tarih', 'Sembol', 'İşlem', 'Adet', 'Fiyat'], ...trades.map((t) => [t.date, t.name, t.side, t.quantity, t.price])];
   const out = rowsToHoldings(rows, today, id);
 
@@ -95,6 +103,10 @@ export function parseBrokerStatement(lines: string[], today: string, id: () => s
         note: `${d.name}: temettü gününde ${fmt(d.quantity)} adetin varmış, bu dosyada ${fmt(missing)} adetin alışı yok. Elindeyse alış tarihi ve maliyetiyle ayrıca ekle.`,
       });
     }
+  }
+  for (const text of unread) {
+    line += 1;
+    out.push({ line, errors: [`Bu satırı anlayamadım, eklenmedi: “${text.slice(0, 120)}”`] });
   }
   return out;
 }
