@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generatedAt": "2026-11-26T17:42:59.010Z",
+ "generatedAt": "2026-11-26T17:55:58.677Z",
  "cpi": {
   "rows": [
    {
@@ -3672,12 +3672,12 @@
   },
   "crypto": {
    "BTC": {
-    "price": 60422.01,
+    "price": 60519.54,
     "date": "2026-11-26",
     "name": "Bitcoin"
    },
    "ETH": {
-    "price": 1691.12,
+    "price": 1694.07,
     "date": "2026-11-26",
     "name": "Ethereum"
    },
@@ -3692,22 +3692,22 @@
     "name": "USD Coin"
    },
    "BNB": {
-    "price": 551.21,
+    "price": 552.11,
     "date": "2026-11-26",
     "name": "BNB"
    },
    "SOL": {
-    "price": 70.85,
+    "price": 70.99,
     "date": "2026-11-26",
     "name": "Solana"
    },
    "XRP": {
-    "price": 0.9489,
+    "price": 0.9503,
     "date": "2026-11-26",
     "name": "XRP"
    },
    "DOGE": {
-    "price": 0.0567,
+    "price": 0.05681,
     "date": "2026-11-26",
     "name": "Dogecoin"
    },
@@ -3722,17 +3722,17 @@
     "name": "TRON"
    },
    "AVAX": {
-    "price": 6.604,
+    "price": 6.617,
     "date": "2026-11-26",
     "name": "Avalanche"
    },
    "LINK": {
-    "price": 9.189,
+    "price": 9.208,
     "date": "2026-11-26",
     "name": "Chainlink"
    },
    "DOT": {
-    "price": 0.669,
+    "price": 0.671,
     "date": "2026-11-26",
     "name": "Polkadot"
    },
@@ -3742,17 +3742,17 @@
     "name": "Toncoin"
    },
    "LTC": {
-    "price": 43.25,
+    "price": 43.3,
     "date": "2026-11-26",
     "name": "Litecoin"
    },
    "SHIB": {
-    "price": 0.00000363,
+    "price": 0.00000364,
     "date": "2026-11-26",
     "name": "Shiba Inu"
    },
    "BCH": {
-    "price": 208,
+    "price": 208.1,
     "date": "2026-11-26",
     "name": "Bitcoin Cash"
    },
@@ -3762,12 +3762,12 @@
     "name": "Cosmos"
    },
    "NEAR": {
-    "price": 3.072,
+    "price": 3.059,
     "date": "2026-11-26",
     "name": "NEAR"
    },
    "XLM": {
-    "price": 0.1264,
+    "price": 0.1267,
     "date": "2026-11-26",
     "name": "Stellar"
    },
