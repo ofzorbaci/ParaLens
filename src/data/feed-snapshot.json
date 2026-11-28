@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generatedAt": "2026-11-28T16:09:53.083Z",
+ "generatedAt": "2026-11-28T16:26:12.842Z",
  "cpi": {
   "rows": [
    {
@@ -3672,12 +3672,12 @@
   },
   "crypto": {
    "BTC": {
-    "price": 59515.73,
+    "price": 59422.5,
     "date": "2026-11-28",
     "name": "Bitcoin"
    },
    "ETH": {
-    "price": 1650.45,
+    "price": 1647.2,
     "date": "2026-11-28",
     "name": "Ethereum"
    },
@@ -3692,47 +3692,47 @@
     "name": "USD Coin"
    },
    "BNB": {
-    "price": 552.28,
+    "price": 551.32,
     "date": "2026-11-28",
     "name": "BNB"
    },
    "SOL": {
-    "price": 70.62,
+    "price": 70.53,
     "date": "2026-11-28",
     "name": "Solana"
    },
    "XRP": {
-    "price": 0.9416,
+    "price": 0.9389,
     "date": "2026-11-28",
     "name": "XRP"
    },
    "DOGE": {
-    "price": 0.05644,
+    "price": 0.05626,
     "date": "2026-11-28",
     "name": "Dogecoin"
    },
    "ADA": {
-    "price": 0.1454,
+    "price": 0.1452,
     "date": "2026-11-28",
     "name": "Cardano"
    },
    "TRX": {
-    "price": 0.2999,
+    "price": 0.2997,
     "date": "2026-11-28",
     "name": "TRON"
    },
    "AVAX": {
-    "price": 6.47,
+    "price": 6.447,
     "date": "2026-11-28",
     "name": "Avalanche"
    },
    "LINK": {
-    "price": 9.143,
+    "price": 9.129,
     "date": "2026-11-28",
     "name": "Chainlink"
    },
    "DOT": {
-    "price": 0.64,
+    "price": 0.639,
     "date": "2026-11-28",
     "name": "Polkadot"
    },
@@ -3742,47 +3742,47 @@
     "name": "Toncoin"
    },
    "LTC": {
-    "price": 44.01,
+    "price": 43.92,
     "date": "2026-11-28",
     "name": "Litecoin"
    },
    "SHIB": {
-    "price": 0.00000358,
+    "price": 0.00000357,
     "date": "2026-11-28",
     "name": "Shiba Inu"
    },
    "BCH": {
-    "price": 205.6,
+    "price": 205.4,
     "date": "2026-11-28",
     "name": "Bitcoin Cash"
    },
    "ATOM": {
-    "price": 1.184,
+    "price": 1.185,
     "date": "2026-11-28",
     "name": "Cosmos"
    },
    "NEAR": {
-    "price": 2.961,
+    "price": 2.949,
     "date": "2026-11-28",
     "name": "NEAR"
    },
    "XLM": {
-    "price": 0.1232,
+    "price": 0.123,
     "date": "2026-11-28",
     "name": "Stellar"
    },
    "APT": {
-    "price": 0.3734,
+    "price": 0.3718,
     "date": "2026-11-28",
     "name": "Aptos"
    },
    "ARB": {
-    "price": 0.1114,
+    "price": 0.1109,
     "date": "2026-11-28",
     "name": "Arbitrum"
    },
    "PEPE": {
-    "price": 0.0000034,
+    "price": 0.00000339,
     "date": "2026-11-28",
     "name": "Pepe"
    }
